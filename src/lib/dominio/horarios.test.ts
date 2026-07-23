@@ -3,6 +3,9 @@ import {
   jsDayADiaSemana,
   intervalosSeSolapan,
   filtroSolapamientoPrisma,
+  minutosDesdeHHmm,
+  bloqueAdmiteDuracion,
+  claseCabeEnBloque,
   DIAS_SEMANA,
 } from "./horarios";
 
@@ -58,5 +61,50 @@ describe("filtroSolapamientoPrisma", () => {
     expect(filtroSolapamientoPrisma("10:00", "11:00")).toEqual({
       AND: [{ horaInicio: { lt: "11:00" } }, { horaFin: { gt: "10:00" } }],
     });
+  });
+});
+
+describe("minutosDesdeHHmm", () => {
+  it("convierte horas y minutos a minutos desde medianoche", () => {
+    expect(minutosDesdeHHmm("00:00")).toBe(0);
+    expect(minutosDesdeHHmm("07:15")).toBe(435);
+    expect(minutosDesdeHHmm("23:59")).toBe(1439);
+  });
+});
+
+describe("bloqueAdmiteDuracion", () => {
+  it("acepta un bloque más largo que la duración", () => {
+    // 07:15-10:00 = 165 min, clase de 120 min -> cabe
+    expect(bloqueAdmiteDuracion("07:15", "10:00", 120)).toBe(true);
+  });
+
+  it("acepta un bloque de duración exacta", () => {
+    expect(bloqueAdmiteDuracion("09:00", "10:00", 60)).toBe(true);
+  });
+
+  it("rechaza un bloque más corto que la duración (caso del bug)", () => {
+    // 15:00-16:00 = 60 min, clase de 120 min -> NO cabe
+    expect(bloqueAdmiteDuracion("15:00", "16:00", 120)).toBe(false);
+  });
+});
+
+describe("claseCabeEnBloque", () => {
+  it("cabe cuando empieza al inicio y termina dentro del bloque", () => {
+    expect(claseCabeEnBloque("07:15", 120, "07:15", "10:00")).toBe(true);
+  });
+
+  it("no cabe cuando la clase desborda el fin del bloque", () => {
+    // 15:00 + 120 = 17:00 > 16:00 (el caso exacto de la captura)
+    expect(claseCabeEnBloque("15:00", 120, "15:00", "16:00")).toBe(false);
+  });
+
+  it("no cabe cuando empieza antes del inicio del bloque", () => {
+    expect(claseCabeEnBloque("06:00", 30, "07:15", "10:00")).toBe(false);
+  });
+
+  it("cabe empezando en el último inicio válido del bloque", () => {
+    // Bloque 09:00-11:00 (120 min), clase de 60 min: último inicio válido 10:00
+    expect(claseCabeEnBloque("10:00", 60, "09:00", "11:00")).toBe(true);
+    expect(claseCabeEnBloque("10:30", 60, "09:00", "11:00")).toBe(false);
   });
 });

@@ -7,6 +7,7 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import Button from "@/components/ui/Button";
+import { bloqueAdmiteDuracion, claseCabeEnBloque } from "@/lib/dominio";
 
 const DIAS_SEMANA = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -78,8 +79,19 @@ export default function ReservaForm({ servicioId, duracionMin, profesorId, onSub
     ? DIAS_SEMANA[jsDayToDisp(new Date(fecha + "T12:00:00").getDay())]
     : "";
 
+  // ¿La hora elegida entra completa en algún bloque de disponibilidad del día?
+  // Solo se valida cuando el profesor tiene horarios configurados para ese día;
+  // si no tiene ninguno, el aviso correspondiente ya se muestra más abajo.
+  const horaInicioCabe =
+    !horaInicio ||
+    slotsDiaSeleccionado.length === 0 ||
+    slotsDiaSeleccionado.some((slot) =>
+      claseCabeEnBloque(horaInicio, duracionMin, slot.horaInicio, slot.horaFin)
+    );
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (!horaInicioCabe) return;
     await onSubmit({
       servicioId,
       fecha,
@@ -135,21 +147,32 @@ export default function ReservaForm({ servicioId, duracionMin, profesorId, onSub
             Horarios disponibles el {diaSeleccionadoNombre}:
           </p>
           <div className="flex flex-wrap gap-2">
-            {slotsDiaSeleccionado.map((slot) => (
-              <button
-                key={slot.id}
-                type="button"
-                onClick={() => setHoraInicio(slot.horaInicio)}
-                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
-                  horaInicio === slot.horaInicio
-                    ? "bg-green-600 text-white border-green-600"
-                    : "bg-white text-green-700 border-green-300 hover:bg-green-100"
-                }`}
-              >
-                {slot.horaInicio} - {slot.horaFin}
-              </button>
-            ))}
+            {slotsDiaSeleccionado.map((slot) => {
+              // Un bloque más corto que la duración de la clase no es reservable.
+              const cabe = bloqueAdmiteDuracion(slot.horaInicio, slot.horaFin, duracionMin);
+              return (
+                <button
+                  key={slot.id}
+                  type="button"
+                  disabled={!cabe}
+                  title={cabe ? undefined : `La clase dura ${duracionMin} min y no cabe en este bloque`}
+                  onClick={() => setHoraInicio(slot.horaInicio)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                    !cabe
+                      ? "bg-gray-100 text-gray-400 border-gray-200 line-through cursor-not-allowed"
+                      : horaInicio === slot.horaInicio
+                      ? "bg-green-600 text-white border-green-600"
+                      : "bg-white text-green-700 border-green-300 hover:bg-green-100"
+                  }`}
+                >
+                  {slot.horaInicio} - {slot.horaFin}
+                </button>
+              );
+            })}
           </div>
+          <p className="text-[11px] text-green-700/70 mt-2">
+            Esta clase dura {duracionMin} min. Los bloques donde no cabe aparecen tachados.
+          </p>
         </div>
       )}
 
@@ -173,6 +196,12 @@ export default function ReservaForm({ servicioId, duracionMin, profesorId, onSub
             Hora de fin estimada: <strong>{horaFin}</strong> ({duracionMin} min)
           </p>
         )}
+        {!horaInicioCabe && (
+          <p className="text-xs text-red-600 mt-1">
+            ⚠️ Con este inicio la clase terminaría a las {horaFin}, fuera del horario
+            disponible del profesor. Elige un horario donde la clase de {duracionMin} min entre completa.
+          </p>
+        )}
       </div>
 
       <div>
@@ -187,7 +216,7 @@ export default function ReservaForm({ servicioId, duracionMin, profesorId, onSub
         />
       </div>
 
-      <Button type="submit" cargando={cargando} className="w-full">
+      <Button type="submit" cargando={cargando} disabled={!horaInicioCabe} className="w-full">
         Reservar clase
       </Button>
     </form>

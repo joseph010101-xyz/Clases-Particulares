@@ -5,7 +5,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 
@@ -18,21 +18,30 @@ interface Usuario {
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cargandoAuth, setCargandoAuth] = useState(true);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [menuMovil, setMenuMovil] = useState(false);
 
-  // Obtener usuario autenticado
+  // Revalidar la sesión en cada cambio de ruta. La barra vive en el layout raíz
+  // y no se re-monta al navegar por el cliente (p. ej. tras iniciar sesión con
+  // router.push), por lo que sin esto mostraría un estado de sesión obsoleto.
   useEffect(() => {
-    fetch("/api/auth/me")
+    let activo = true;
+    fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.usuario) setUsuario(data.usuario);
+        if (activo) setUsuario(data?.usuario ?? null);
       })
       .catch(() => {})
-      .finally(() => setCargandoAuth(false));
-  }, []);
+      .finally(() => {
+        if (activo) setCargandoAuth(false);
+      });
+    return () => {
+      activo = false;
+    };
+  }, [pathname]);
 
   const cerrarSesion = async () => {
     await fetch("/api/auth/me", { method: "POST" });

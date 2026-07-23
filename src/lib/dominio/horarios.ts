@@ -48,3 +48,39 @@ export function filtroSolapamientoPrisma(horaInicio: string, horaFin: string) {
     AND: [{ horaInicio: { lt: horaFin } }, { horaFin: { gt: horaInicio } }],
   };
 }
+
+/** Convierte una hora "HH:mm" en minutos desde medianoche. */
+export function minutosDesdeHHmm(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Indica si un bloque de disponibilidad [bloqueInicio, bloqueFin) es lo bastante
+ * largo para alojar una clase de `duracionMin` minutos (empezando al inicio del
+ * bloque). Sirve para no ofrecer bloques donde la clase no cabe.
+ */
+export function bloqueAdmiteDuracion(
+  bloqueInicio: string,
+  bloqueFin: string,
+  duracionMin: number
+): boolean {
+  return minutosDesdeHHmm(bloqueFin) - minutosDesdeHHmm(bloqueInicio) >= duracionMin;
+}
+
+/**
+ * Indica si una clase que empieza a `inicioClase` y dura `duracionMin` cabe por
+ * completo dentro del bloque [bloqueInicio, bloqueFin) (sin desbordar el fin).
+ */
+export function claseCabeEnBloque(
+  inicioClase: string,
+  duracionMin: number,
+  bloqueInicio: string,
+  bloqueFin: string
+): boolean {
+  const inicio = minutosDesdeHHmm(inicioClase);
+  return (
+    inicio >= minutosDesdeHHmm(bloqueInicio) &&
+    inicio + duracionMin <= minutosDesdeHHmm(bloqueFin)
+  );
+}
