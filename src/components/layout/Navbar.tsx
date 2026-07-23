@@ -8,11 +8,12 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
+import { puedeModerar } from "@/lib/dominio/permisos";
 
 interface Usuario {
   id: string;
   nombre: string;
-  rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN";
+  rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN" | "MODERADOR";
   foto?: string | null;
 }
 
@@ -157,7 +158,7 @@ export default function Navbar() {
                     >
                       Mi panel
                     </Link>
-                    {usuario.rol === "ADMIN" && (
+                    {puedeModerar(usuario.rol) && (
                       <Link
                         href="/admin"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -233,7 +234,7 @@ export default function Navbar() {
                   >
                     Mi panel
                   </Link>
-                  {usuario.rol === "ADMIN" && (
+                  {puedeModerar(usuario.rol) && (
                     <Link
                       href="/admin"
                       className="text-gray-600 hover:text-gray-900 py-2"

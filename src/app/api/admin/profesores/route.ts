@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { puedeModerar } from "@/lib/dominio/permisos";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,8 +15,8 @@ export async function GET(request: NextRequest) {
     if (!payload) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
-    if (payload.rol !== "ADMIN") {
-      return NextResponse.json({ error: "Solo administradores" }, { status: 403 });
+    if (!puedeModerar(payload.rol)) {
+      return NextResponse.json({ error: "Sin permisos de moderación" }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);

@@ -11,7 +11,7 @@ export interface TokenPayload extends JWTPayload {
   userId: string;
   email: string;
   nombre: string;
-  rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN";
+  rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN" | "MODERADOR";
 }
 
 // Clave secreta codificada para jose
