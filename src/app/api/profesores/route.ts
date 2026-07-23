@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { promedioCalificaciones } from "@/lib/dominio";
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,7 +50,6 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           nombre: true,
-          email: true,
           foto: true,
           bio: true,
           ubicacion: true,
@@ -89,9 +89,7 @@ export async function GET(request: NextRequest) {
           modalidad: s.modalidad,
           nivel: s.nivel,
         })),
-        calificacionPromedio: calificaciones.length > 0
-          ? Math.round((calificaciones.reduce((a, b) => a + b, 0) / calificaciones.length) * 10) / 10
-          : null,
+        calificacionPromedio: promedioCalificaciones(calificaciones),
         totalResenas: calificaciones.length,
       };
     });

@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ClasesYa
 
-## Getting Started
+Marketplace de clases particulares que conecta profesores y estudiantes.
+Next.js 14 (App Router) + PostgreSQL vía Prisma. Toda la interfaz y el dominio
+están en español.
 
-First, run the development server:
+## Desarrollo local
+
+Requisitos: Node 20+ y una base de datos PostgreSQL.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env      # completa DATABASE_URL y JWT_SECRET (host: localhost fuera de Docker)
+npx prisma db push        # crea el esquema
+npx prisma db seed        # datos de prueba (usuarios con password 123456)
+npm run dev               # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Con Docker (Next.js + PostgreSQL):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose up --build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Pruebas
 
-## Learn More
+La lógica de negocio pura vive en `src/lib/dominio/` (solapamientos de horarios,
+conversión de día de la semana, promedio de calificaciones y máquina de estados
+de las reservas) y está cubierta por pruebas unitarias con Vitest, sin necesidad
+de base de datos.
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm test          # ejecuta la suite una vez
+npm run test:watch
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Comandos
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev      # servidor de desarrollo
+npm run build    # build de producción (output: standalone)
+npm run lint     # ESLint
+npm test         # pruebas unitarias (Vitest)
 
-## Deploy on Vercel
+npx prisma db push    # sincroniza el esquema (no se usan archivos de migración)
+npx prisma db seed    # carga datos de prueba (borra los existentes)
+npx prisma generate   # regenera el cliente tras cambios de esquema
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Variables de entorno
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable       | Requerida | Descripción |
+|----------------|-----------|-------------|
+| `DATABASE_URL` | Sí        | Cadena de conexión a PostgreSQL. |
+| `JWT_SECRET`   | Sí        | Secreto para firmar los JWT de sesión. Genera uno con `openssl rand -base64 32`. |
+| `TZ`           | Recomendada en producción | Zona horaria del servidor. Ver nota abajo. |
+| `NODE_ENV`     | Automática | En `production` la cookie de sesión se marca `secure` automáticamente. |
+
+> La antigua variable `COOKIE_SECURE` ya no se usa: la cookie se marca `secure`
+> cuando `NODE_ENV === "production"`.
+
+### Zona horaria (`TZ`)
+
+Las fechas de las reservas se guardan como día calendario y se comparan usando la
+zona horaria del proceso Node. En un contenedor (Railway/Docker) el valor por
+defecto es **UTC**, lo que puede desplazar el límite de "hoy" para usuarios en
+otras zonas (p. ej. UTC-4). Para un despliegue de una sola región, define la
+variable `TZ` con la zona local, por ejemplo:
+
+```
+TZ=America/La_Paz
+```
+
+## Despliegue en Railway
+
+El repositorio incluye `Dockerfile` y `entrypoint.sh`; Railway detecta el
+`Dockerfile` y construye la imagen. El `entrypoint.sh` ejecuta `prisma db push`
+al arrancar, por lo que el esquema se sincroniza en cada despliegue. Variables a
+configurar en el servicio de la app: `DATABASE_URL` (referencia a
+`${{Postgres.DATABASE_URL}}`), `JWT_SECRET`, `PORT=3000` y, recomendado, `TZ`.

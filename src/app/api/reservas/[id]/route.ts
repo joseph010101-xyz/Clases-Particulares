@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { validarTransicionReserva, reservaYaOcurrio, type EstadoReserva } from "@/lib/dominio";
 
 // Obtener detalle de una reserva
 export async function GET(
@@ -82,15 +83,6 @@ export async function PATCH(
     const { id } = params;
     const { estado } = await request.json();
 
-    // Validar estado
-    const estadosValidos = ["CONFIRMADA", "CANCELADA", "COMPLETADA"];
-    if (!estadosValidos.includes(estado)) {
-      return NextResponse.json(
-        { error: "Estado inválido. Valores permitidos: " + estadosValidos.join(", ") },
-        { status: 400 }
-      );
-    }
-
     const reserva = await prisma.reserva.findUnique({
       where: { id },
       include: {
@@ -105,30 +97,22 @@ export async function PATCH(
     const esEstudiante = reserva.estudianteId === payload.userId;
     const esProfesor = reserva.servicio.profesorId === payload.userId;
 
-    // Reglas de negocio para cambio de estado
-    if (estado === "CONFIRMADA" && !esProfesor) {
-      return NextResponse.json(
-        { error: "Solo el profesor puede confirmar reservas" },
-        { status: 403 }
-      );
-    }
-    if (estado === "COMPLETADA" && !esProfesor) {
-      return NextResponse.json(
-        { error: "Solo el profesor puede marcar como completada" },
-        { status: 403 }
-      );
-    }
-    if (estado === "CANCELADA" && !esEstudiante && !esProfesor) {
-      return NextResponse.json(
-        { error: "No tienes permiso para cancelar esta reserva" },
-        { status: 403 }
-      );
+    // Reglas de permisos y máquina de estados (lógica de dominio)
+    const validacion = validarTransicionReserva(
+      reserva.estado as EstadoReserva,
+      estado,
+      { esProfesor, esEstudiante }
+    );
+    if (!validacion.permitido) {
+      const status = validacion.motivo === "sin_permiso" ? 403 : 400;
+      return NextResponse.json({ error: validacion.mensaje }, { status });
     }
 
-    // No se puede cambiar el estado de reservas ya completadas o canceladas
-    if (reserva.estado === "COMPLETADA" || reserva.estado === "CANCELADA") {
+    // Una clase solo puede completarse una vez que efectivamente terminó,
+    // para evitar reseñas prematuras sobre clases que aún no ocurrieron.
+    if (estado === "COMPLETADA" && !reservaYaOcurrio(reserva.fecha, reserva.horaFin)) {
       return NextResponse.json(
-        { error: "No se puede modificar una reserva " + reserva.estado.toLowerCase() },
+        { error: "No puedes completar una clase que aún no ha terminado" },
         { status: 400 }
       );
     }

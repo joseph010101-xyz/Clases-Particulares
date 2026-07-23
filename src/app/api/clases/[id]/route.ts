@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { servicioSchema } from "@/lib/validations";
+import { promedioCalificaciones } from "@/lib/dominio";
 
 // Obtener detalle de un servicio
 export async function GET(
@@ -74,15 +75,11 @@ export async function GET(
     }
 
     // Calcular calificación promedio
+    const calificaciones = servicio.reservas
+      .map((r) => r.resena?.calificacion)
+      .filter((c): c is number => c != null);
+    const calificacionPromedio = promedioCalificaciones(calificaciones);
     const resenas = servicio.reservas.map((r) => r.resena).filter(Boolean);
-    const calificacionPromedio =
-      resenas.length > 0
-        ? Math.round(
-            (resenas.reduce((sum, r) => sum + (r?.calificacion || 0), 0) /
-              resenas.length) *
-              10
-          ) / 10
-        : null;
 
     return NextResponse.json({
       servicio: {

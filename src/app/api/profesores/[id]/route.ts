@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { promedioCalificaciones } from "@/lib/dominio";
 
 export async function GET(
   _request: NextRequest,
@@ -22,11 +23,9 @@ export async function GET(
       select: {
         id: true,
         nombre: true,
-        email: true,
         foto: true,
         bio: true,
         ubicacion: true,
-        telefono: true,
         createdAt: true,
         servicios: {
           where: { activo: true },
@@ -77,16 +76,15 @@ export async function GET(
       const resenas = servicio.reservas
         .map((r) => r.resena)
         .filter(Boolean);
-      const promedio =
-        resenas.length > 0
-          ? resenas.reduce((sum, r) => sum + (r?.calificacion || 0), 0) / resenas.length
-          : null;
+      const calificaciones = resenas
+        .map((r) => r?.calificacion)
+        .filter((c): c is number => c != null);
       // Remover reservas del response (ya extrajimos las reseñas)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { reservas: _, ...servicioSinReservas } = servicio;
       return {
         ...servicioSinReservas,
-        calificacionPromedio: promedio ? Math.round(promedio * 10) / 10 : null,
+        calificacionPromedio: promedioCalificaciones(calificaciones),
         totalResenas: resenas.length,
         resenas: resenas.slice(0, 5), // Últimas 5 reseñas
       };

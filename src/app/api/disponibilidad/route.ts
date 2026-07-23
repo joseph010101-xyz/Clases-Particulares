@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { disponibilidadSchema } from "@/lib/validations";
+import { filtroSolapamientoPrisma } from "@/lib/dominio";
 
 // Listar disponibilidad del profesor autenticado (o de un profesor por query param)
 export async function GET(request: NextRequest) {
@@ -73,10 +74,7 @@ export async function POST(request: NextRequest) {
       where: {
         profesorId: payload.userId,
         diaSemana,
-        AND: [
-          { horaInicio: { lt: horaFin } },
-          { horaFin: { gt: horaInicio } },
-        ],
+        ...filtroSolapamientoPrisma(horaInicio, horaFin),
       },
     });
 

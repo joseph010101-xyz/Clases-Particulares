@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest) {
       });
       response.cookies.set(COOKIE_NAME, nuevoToken, {
         httpOnly: true,
-        secure: process.env.COOKIE_SECURE === "true",
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 60 * 60 * 24 * 7, // 7 días
         path: "/",

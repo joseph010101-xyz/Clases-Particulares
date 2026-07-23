@@ -38,11 +38,9 @@ interface Disponibilidad {
 interface ProfesorDetalle {
   id: string;
   nombre: string;
-  email: string;
   foto: string | null;
   bio: string | null;
   ubicacion: string | null;
-  telefono: string | null;
   servicios: Servicio[];
   disponibilidad: Disponibilidad[];
 }

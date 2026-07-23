@@ -5,9 +5,14 @@
 // =============================================
 
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { reservaSchema } from "@/lib/validations";
+import { esDiaPasado, jsDayADiaSemana, filtroSolapamientoPrisma } from "@/lib/dominio";
+
+// Error interno para abortar la transacción cuando un horario ya está ocupado.
+class ConflictoReserva extends Error {}
 
 // Listar reservas del usuario autenticado
 export async function GET(request: NextRequest) {
@@ -108,14 +113,14 @@ export async function POST(request: NextRequest) {
 
     const { servicioId, fecha, horaInicio, horaFin, notas } = resultado.data;
 
-    // Parsear fecha explícitamente como YYYY-MM-DD (evitar problemas de timezone)
+    // Parsear fecha explícitamente como YYYY-MM-DD. Se construye a mediodía UTC
+    // para que el día calendario sea estable independientemente de la zona
+    // horaria del servidor (ver nota sobre la variable TZ en el README).
     const [anio, mes, dia] = fecha.split("-").map(Number);
-    const fechaReserva = new Date(anio, mes - 1, dia); // Zona local del servidor
+    const fechaReserva = new Date(Date.UTC(anio, mes - 1, dia, 12, 0, 0));
 
     // Verificar que la fecha no sea en el pasado
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    if (fechaReserva < hoy) {
+    if (esDiaPasado(fechaReserva)) {
       return NextResponse.json(
         { error: "No se pueden crear reservas en fechas pasadas" },
         { status: 400 }
@@ -144,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar disponibilidad del profesor en el día/hora solicitados
-    const diaSemana = (fechaReserva.getDay() + 6) % 7; // JS: 0=Dom → Schema: 0=Lun
+    const diaSemana = jsDayADiaSemana(fechaReserva.getUTCDay()); // Schema: 0=Lun
     const disponibilidad = await prisma.disponibilidad.findFirst({
       where: {
         profesorId: servicio.profesorId,
@@ -161,61 +166,71 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar que el estudiante no tenga otra reserva que se solape en ese horario
-    const reservaEstudiante = await prisma.reserva.findFirst({
-      where: {
-        estudianteId: payload.userId,
-        fecha: fechaReserva,
-        estado: { in: ["PENDIENTE", "CONFIRMADA"] },
-        AND: [
-          { horaInicio: { lt: horaFin } },
-          { horaFin: { gt: horaInicio } },
-        ],
-      },
-    });
+    // Las verificaciones de solapamiento y la creación se ejecutan dentro de una
+    // transacción Serializable: si dos estudiantes intentan reservar el mismo
+    // hueco a la vez, PostgreSQL aborta una de las transacciones (error P2034) y
+    // respondemos 409 en lugar de crear una doble reserva (condición de carrera).
+    let reserva;
+    try {
+      reserva = await prisma.$transaction(
+        async (tx) => {
+          // El estudiante no puede tener otra reserva que se solape
+          const reservaEstudiante = await tx.reserva.findFirst({
+            where: {
+              estudianteId: payload.userId,
+              fecha: fechaReserva,
+              estado: { in: ["PENDIENTE", "CONFIRMADA"] },
+              ...filtroSolapamientoPrisma(horaInicio, horaFin),
+            },
+          });
+          if (reservaEstudiante) {
+            throw new ConflictoReserva("Ya tienes otra reserva en ese horario");
+          }
 
-    if (reservaEstudiante) {
-      return NextResponse.json(
-        { error: "Ya tienes otra reserva en ese horario" },
-        { status: 409 }
-      );
-    }
+          // El profesor no puede tener otra reserva que se solape
+          const reservaProfesor = await tx.reserva.findFirst({
+            where: {
+              servicio: { profesorId: servicio.profesorId },
+              fecha: fechaReserva,
+              estado: { in: ["PENDIENTE", "CONFIRMADA"] },
+              ...filtroSolapamientoPrisma(horaInicio, horaFin),
+            },
+          });
+          if (reservaProfesor) {
+            throw new ConflictoReserva("El profesor ya tiene una reserva en ese horario");
+          }
 
-    // Verificar que no haya una reserva existente del profesor que se solape en horario
-    const reservaExistente = await prisma.reserva.findFirst({
-      where: {
-        servicio: { profesorId: servicio.profesorId },
-        fecha: fechaReserva,
-        estado: { in: ["PENDIENTE", "CONFIRMADA"] },
-        AND: [
-          { horaInicio: { lt: horaFin } },
-          { horaFin: { gt: horaInicio } },
-        ],
-      },
-    });
-
-    if (reservaExistente) {
-      return NextResponse.json(
-        { error: "El profesor ya tiene una reserva en ese horario" },
-        { status: 409 }
-      );
-    }
-
-    const reserva = await prisma.reserva.create({
-      data: {
-        servicioId,
-        estudianteId: payload.userId,
-        fecha: fechaReserva,
-        horaInicio,
-        horaFin,
-        notas,
-      },
-      include: {
-        servicio: {
-          select: { materia: true, profesor: { select: { id: true, nombre: true } } },
+          return tx.reserva.create({
+            data: {
+              servicioId,
+              estudianteId: payload.userId,
+              fecha: fechaReserva,
+              horaInicio,
+              horaFin,
+              notas,
+            },
+            include: {
+              servicio: {
+                select: { materia: true, profesor: { select: { id: true, nombre: true } } },
+              },
+            },
+          });
         },
-      },
-    });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+      );
+    } catch (error) {
+      if (error instanceof ConflictoReserva) {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+      // Conflicto de serialización: dos reservas concurrentes sobre el mismo hueco
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+        return NextResponse.json(
+          { error: "Ese horario acaba de ser reservado. Intenta con otro." },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
 
     // Notificar al profesor de la nueva reserva
     await prisma.notificacion.create({

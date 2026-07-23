@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { servicioSchema } from "@/lib/validations";
+import { promedioCalificaciones } from "@/lib/dominio";
 
 // Listar servicios con filtros y paginación
 export async function GET(request: NextRequest) {
@@ -95,9 +96,7 @@ export async function GET(request: NextRequest) {
         .filter((c): c is number => c != null);
       return {
         ...s,
-        calificacionPromedio: calificaciones.length > 0
-          ? Math.round((calificaciones.reduce((a, b) => a + b, 0) / calificaciones.length) * 10) / 10
-          : null,
+        calificacionPromedio: promedioCalificaciones(calificaciones),
         totalResenas: calificaciones.length,
       };
     });
