@@ -23,6 +23,7 @@ export default function Navbar() {
   const [cargandoAuth, setCargandoAuth] = useState(true);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [menuMovil, setMenuMovil] = useState(false);
+  const [noLeidos, setNoLeidos] = useState(0);
 
   // Revalidar la sesión en cada cambio de ruta. La barra vive en el layout raíz
   // y no se re-monta al navegar por el cliente (p. ej. tras iniciar sesión con
@@ -42,6 +43,40 @@ export default function Navbar() {
       activo = false;
     };
   }, [pathname]);
+
+  // Contador de mensajes no leídos (se recarga al navegar y tras leer).
+  useEffect(() => {
+    if (!usuario) {
+      setNoLeidos(0);
+      return;
+    }
+    let activo = true;
+    fetch("/api/mensajes", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (activo && data) setNoLeidos(data.totalNoLeidos ?? 0);
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, [usuario, pathname]);
+
+  // Actualización en vivo del badge: al llegar un mensaje nuevo por SSE se
+  // recalcula el total no leído desde el servidor (fuente de verdad).
+  useEffect(() => {
+    if (!usuario?.id) return;
+    const es = new EventSource("/api/mensajes/stream");
+    es.addEventListener("mensaje:nuevo", () => {
+      fetch("/api/mensajes", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setNoLeidos(data.totalNoLeidos ?? 0);
+        })
+        .catch(() => {});
+    });
+    return () => es.close();
+  }, [usuario?.id]);
 
   const cerrarSesion = async () => {
     await fetch("/api/auth/me", { method: "POST" });
@@ -74,6 +109,20 @@ export default function Navbar() {
             >
               Profesores
             </Link>
+
+            {usuario && (
+              <Link
+                href="/mensajes"
+                className="relative text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                Mensajes
+                {noLeidos > 0 && (
+                  <span className="absolute -top-2 -right-3 bg-red-600 text-white text-[10px] min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                    {noLeidos > 9 ? "9+" : noLeidos}
+                  </span>
+                )}
+              </Link>
+            )}
 
             {cargandoAuth ? (
               <div className="w-24 h-8" />
@@ -156,6 +205,18 @@ export default function Navbar() {
               </Link>
               {cargandoAuth ? null : usuario ? (
                 <>
+                  <Link
+                    href="/mensajes"
+                    className="text-gray-600 hover:text-gray-900 py-2 flex items-center gap-2"
+                    onClick={() => setMenuMovil(false)}
+                  >
+                    Mensajes
+                    {noLeidos > 0 && (
+                      <span className="bg-red-600 text-white text-[10px] min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center">
+                        {noLeidos > 9 ? "9+" : noLeidos}
+                      </span>
+                    )}
+                  </Link>
                   <Link
                     href={usuario.rol === "PROFESOR" ? "/profesores/dashboard" : "/estudiantes/dashboard"}
                     className="text-gray-600 hover:text-gray-900 py-2"

@@ -254,11 +254,17 @@ export default function ProfesorDetallePage() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4">
             <h3 className="font-semibold text-gray-900 mb-3">¿Quieres reservar?</h3>
             <p className="text-sm text-gray-600 mb-3">
-              Elige uno de sus servicios y reserva tu clase particular.
+              Elige uno de sus servicios y reserva tu clase particular, o escríbele
+              si tienes dudas antes de reservar.
             </p>
-            <Link href="/clases">
-              <Button className="w-full">Ver clases disponibles</Button>
-            </Link>
+            <div className="space-y-2">
+              <Link href="/clases" className="block">
+                <Button className="w-full">Ver clases disponibles</Button>
+              </Link>
+              <Link href={`/mensajes?conUsuarioId=${profesor.id}`} className="block">
+                <Button variante="secondary" className="w-full">Enviar mensaje</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

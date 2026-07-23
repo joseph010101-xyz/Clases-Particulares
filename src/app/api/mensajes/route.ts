@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { mensajeSchema } from "@/lib/validations";
+import { busRealtime } from "@/lib/realtime/bus";
 
 // Listar conversaciones o mensajes con un usuario específico
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       });
 
       // Marcar como leídos los mensajes recibidos
-      await prisma.mensaje.updateMany({
+      const marcados = await prisma.mensaje.updateMany({
         where: {
           emisorId: conUsuarioId,
           receptorId: payload.userId,
@@ -50,7 +51,19 @@ export async function GET(request: NextRequest) {
         data: { leido: true },
       });
 
-      return NextResponse.json({ mensajes });
+      // Avisar al emisor (en tiempo real) que sus mensajes fueron leídos.
+      if (marcados.count > 0) {
+        busRealtime.publicar(conUsuarioId, "mensaje:leido", { lectorId: payload.userId });
+      }
+
+      // Datos básicos del interlocutor (para el encabezado del chat, incluso si
+      // la conversación aún no tiene mensajes).
+      const interlocutor = await prisma.usuario.findUnique({
+        where: { id: conUsuarioId },
+        select: { id: true, nombre: true, foto: true },
+      });
+
+      return NextResponse.json({ mensajes, interlocutor });
     }
 
     // Si no, retornar lista de conversaciones (últimos mensajes agrupados)
@@ -167,9 +180,47 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Empujar el mensaje en tiempo real a la conexión SSE del receptor (si la hay).
+    busRealtime.publicar(receptorId, "mensaje:nuevo", {
+      id: mensaje.id,
+      emisorId: mensaje.emisorId,
+      contenido: mensaje.contenido,
+      createdAt: mensaje.createdAt,
+      emisor: { id: payload.userId, nombre: payload.nombre },
+    });
+
     return NextResponse.json({ mensaje: "Mensaje enviado", datos: mensaje }, { status: 201 });
   } catch (error) {
     console.error("Error enviando mensaje:", error);
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+  }
+}
+
+// Marcar como leídos los mensajes recibidos de un usuario (sin recargar el hilo)
+export async function PATCH(request: NextRequest) {
+  try {
+    const payload = await obtenerUsuarioActual();
+    if (!payload) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    const { conUsuarioId } = await request.json();
+    if (typeof conUsuarioId !== "string" || !conUsuarioId) {
+      return NextResponse.json({ error: "conUsuarioId requerido" }, { status: 400 });
+    }
+
+    const marcados = await prisma.mensaje.updateMany({
+      where: { emisorId: conUsuarioId, receptorId: payload.userId, leido: false },
+      data: { leido: true },
+    });
+
+    if (marcados.count > 0) {
+      busRealtime.publicar(conUsuarioId, "mensaje:leido", { lectorId: payload.userId });
+    }
+
+    return NextResponse.json({ marcados: marcados.count });
+  } catch (error) {
+    console.error("Error marcando mensajes como leídos:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
