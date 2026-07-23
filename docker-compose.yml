@@ -1,0 +1,53 @@
+# =============================================
+# ClasesYa - Docker Compose
+# Contenedor 1: Next.js (Frontend + Backend)
+# Contenedor 2: PostgreSQL (Base de datos)
+# =============================================
+
+services:
+  # Contenedor 1: Aplicación Next.js
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clasesya-nextjs
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Contenedor 2: Base de datos PostgreSQL (solo accesible internamente)
+  postgres:
+    image: postgres:15-alpine
+    container_name: clasesya-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+# Volumen persistente para los datos de PostgreSQL
+volumes:
+  postgres-data:
+
+# Red interna para comunicación entre contenedores
+networks:
+  app-network:
+    driver: bridge

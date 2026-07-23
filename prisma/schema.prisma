@@ -1,0 +1,244 @@
+// =============================================
+// ClasesYa - Schema de base de datos
+// =============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---- ENUMS ----
+
+// Roles de usuario en la plataforma
+enum Rol {
+  PROFESOR
+  ESTUDIANTE
+  ADMIN
+}
+
+// Modalidad de la clase
+enum Modalidad {
+  PRESENCIAL
+  VIRTUAL
+  AMBOS
+}
+
+// Estado de una reserva
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  COMPLETADA
+}
+
+// Estado de un pago
+enum EstadoPago {
+  PENDIENTE
+  COMPLETADO
+  FALLIDO
+  REEMBOLSADO
+}
+
+// Método de pago
+enum MetodoPago {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  PAYPAL
+}
+
+// Tipo de notificación
+enum TipoNotificacion {
+  RESERVA_NUEVA
+  RESERVA_CONFIRMADA
+  RESERVA_CANCELADA
+  RESERVA_COMPLETADA
+  RESENA_NUEVA
+  MENSAJE_NUEVO
+  PAGO_RECIBIDO
+}
+
+// ---- MODELOS ----
+
+// Usuarios de la plataforma (profesores y estudiantes)
+model Usuario {
+  id        String   @id @default(uuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  rol       Rol
+  foto      String?
+  telefono  String?
+  bio       String?  @db.Text
+  ubicacion String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones: un profesor tiene servicios y disponibilidad
+  servicios      Servicio[]
+  disponibilidad Disponibilidad[]
+  // Un estudiante tiene reservas
+  reservas       Reserva[]
+  // Notificaciones del usuario
+  notificaciones Notificacion[]
+  // Mensajes enviados y recibidos
+  mensajesEnviados  Mensaje[] @relation("MensajesEnviados")
+  mensajesRecibidos Mensaje[] @relation("MensajesRecibidos")
+
+  @@map("usuarios")
+}
+
+// Categorías para organizar los servicios
+model Categoria {
+  id          String   @id @default(uuid())
+  nombre      String   @unique
+  descripcion String?
+  icono       String?  // Nombre del icono (ej: "math", "music", "code")
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  servicios Servicio[]
+
+  @@map("categorias")
+}
+
+// Servicios de enseñanza que ofrecen los profesores
+model Servicio {
+  id           String    @id @default(uuid())
+  profesorId   String    @map("profesor_id")
+  categoriaId  String?   @map("categoria_id")
+  materia      String
+  descripcion  String    @db.Text
+  precioHora   Decimal   @map("precio_hora") @db.Decimal(10, 2)
+  modalidad    Modalidad
+  nivel        String?   // Ej: "Primaria", "Secundaria", "Universitario"
+  duracionMin  Int       @default(60) @map("duracion_min")
+  activo       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  profesor  Usuario    @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  categoria Categoria? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  reservas  Reserva[]
+
+  @@index([profesorId])
+  @@index([categoriaId])
+  @@index([materia])
+  @@map("servicios")
+}
+
+// Disponibilidad horaria de los profesores
+model Disponibilidad {
+  id         String @id @default(uuid())
+  profesorId String @map("profesor_id")
+  diaSemana  Int    @map("dia_semana") // 0=Lunes, 1=Martes, ..., 6=Domingo
+  horaInicio String @map("hora_inicio") // Formato "HH:mm"
+  horaFin    String @map("hora_fin")    // Formato "HH:mm"
+
+  // Relaciones
+  profesor Usuario @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@index([profesorId])
+  @@map("disponibilidad")
+}
+
+// Reservas de clases
+model Reserva {
+  id           String        @id @default(uuid())
+  servicioId   String        @map("servicio_id")
+  estudianteId String        @map("estudiante_id")
+  fecha        DateTime
+  horaInicio   String        @map("hora_inicio") // "HH:mm"
+  horaFin      String        @map("hora_fin")    // "HH:mm"
+  estado       EstadoReserva @default(PENDIENTE)
+  notas        String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  // Relaciones
+  servicio   Servicio @relation(fields: [servicioId], references: [id], onDelete: Cascade)
+  estudiante Usuario  @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+  resena     Resena?  // Una reserva puede tener máximo una reseña
+  pago       Pago?    // Una reserva puede tener máximo un pago
+
+  @@index([servicioId])
+  @@index([estudianteId])
+  @@index([fecha])
+  @@map("reservas")
+}
+
+// Reseñas de clases completadas
+model Resena {
+  id           String   @id @default(uuid())
+  reservaId    String   @unique @map("reserva_id")
+  calificacion Int      // 1 a 5 estrellas
+  comentario   String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+
+  @@map("resenas")
+}
+
+// Pagos de reservas
+model Pago {
+  id         String     @id @default(uuid())
+  reservaId  String     @unique @map("reserva_id")
+  monto      Decimal    @db.Decimal(10, 2)
+  metodoPago MetodoPago @map("metodo_pago")
+  estado     EstadoPago @default(PENDIENTE)
+  referencia String?    // Referencia externa del pago
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  // Relaciones
+  reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+
+  @@index([estado])
+  @@map("pagos")
+}
+
+// Notificaciones del sistema
+model Notificacion {
+  id        String           @id @default(uuid())
+  usuarioId String           @map("usuario_id")
+  tipo      TipoNotificacion
+  mensaje   String
+  leida     Boolean          @default(false)
+  enlace    String?          // URL relativa a donde lleva la notificación
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Relaciones
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@index([leida])
+  @@map("notificaciones")
+}
+
+// Mensajes entre usuarios
+model Mensaje {
+  id          String   @id @default(uuid())
+  emisorId    String   @map("emisor_id")
+  receptorId  String   @map("receptor_id")
+  contenido   String   @db.Text
+  leido       Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  emisor   Usuario @relation("MensajesEnviados", fields: [emisorId], references: [id], onDelete: Cascade)
+  receptor Usuario @relation("MensajesRecibidos", fields: [receptorId], references: [id], onDelete: Cascade)
+
+  @@index([emisorId])
+  @@index([receptorId])
+  @@index([leido])
+  @@map("mensajes")
+}
