@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
               nombre: true,
               foto: true,
               ubicacion: true,
+              verificado: true,
             },
           },
           reservas: {

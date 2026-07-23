@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import Card, { CardBody } from "@/components/ui/Card";
+import BadgeVerificado from "@/components/ui/BadgeVerificado";
 
 interface ProfesorCardProps {
   id: string;
@@ -12,6 +13,7 @@ interface ProfesorCardProps {
   foto?: string | null;
   bio?: string | null;
   ubicacion?: string | null;
+  verificado?: boolean;
   calificacionPromedio?: number | null;
   totalResenas?: number;
   servicios: {
@@ -21,7 +23,7 @@ interface ProfesorCardProps {
   }[];
 }
 
-export default function ProfesorCard({ id, nombre, foto, bio, ubicacion, calificacionPromedio, totalResenas, servicios }: ProfesorCardProps) {
+export default function ProfesorCard({ id, nombre, foto, bio, ubicacion, verificado, calificacionPromedio, totalResenas, servicios }: ProfesorCardProps) {
   // Precio más bajo de los servicios
   const precioMinimo = servicios.length > 0
     ? Math.min(...servicios.map((s) => Number(s.precioHora)))
@@ -44,7 +46,10 @@ export default function ProfesorCard({ id, nombre, foto, bio, ubicacion, calific
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 truncate">{nombre}</h3>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <h3 className="font-semibold text-gray-900 truncate">{nombre}</h3>
+                {verificado && <BadgeVerificado soloIcono className="flex-shrink-0" />}
+              </div>
 
               {calificacionPromedio != null && calificacionPromedio > 0 && (
                 <div className="flex items-center gap-1 mt-0.5 text-sm">

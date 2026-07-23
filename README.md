@@ -71,6 +71,22 @@ variable `TZ` con la zona local, por ejemplo:
 TZ=America/La_Paz
 ```
 
+## Administración (rol ADMIN)
+
+Los profesores se verifican manualmente desde el panel `/admin` (insignia
+"Verificado"). El registro no permite crear administradores por seguridad, así
+que el primer admin se crea promoviendo una cuenta existente:
+
+```bash
+# 1) Regístrate normalmente en la app con el correo que será admin.
+# 2) Con DATABASE_URL apuntando a la base de datos objetivo, ejecuta:
+node scripts/promover-admin.js tu-correo@ejemplo.com
+```
+
+Tras promoverla, cierra sesión y vuelve a entrar: aparecerá "Administración" en
+el menú. Para hacerlo contra la base de Railway, usa temporalmente su
+`DATABASE_PUBLIC_URL` como `DATABASE_URL` al ejecutar el script.
+
 ## Despliegue en Railway
 
 El repositorio incluye `Dockerfile` y `entrypoint.sh`; Railway detecta el

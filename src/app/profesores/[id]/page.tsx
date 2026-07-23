@@ -10,6 +10,7 @@ import Link from "next/link";
 import StarRating from "@/components/ui/StarRating";
 import ClaseCard from "@/components/clases/ClaseCard";
 import Button from "@/components/ui/Button";
+import BadgeVerificado from "@/components/ui/BadgeVerificado";
 
 interface Servicio {
   id: string;
@@ -41,6 +42,7 @@ interface ProfesorDetalle {
   foto: string | null;
   bio: string | null;
   ubicacion: string | null;
+  verificado?: boolean;
   servicios: Servicio[];
   disponibilidad: Disponibilidad[];
 }
@@ -141,7 +143,10 @@ export default function ProfesorDetallePage() {
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900">{profesor.nombre}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900">{profesor.nombre}</h1>
+              {profesor.verificado && <BadgeVerificado />}
+            </div>
 
             <div className="flex items-center gap-3 mt-2">
               {promedioCalificacion && (

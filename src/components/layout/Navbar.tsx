@@ -157,6 +157,15 @@ export default function Navbar() {
                     >
                       Mi panel
                     </Link>
+                    {usuario.rol === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setMenuAbierto(false)}
+                      >
+                        Administración
+                      </Link>
+                    )}
                     <button
                       onClick={cerrarSesion}
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -224,6 +233,15 @@ export default function Navbar() {
                   >
                     Mi panel
                   </Link>
+                  {usuario.rol === "ADMIN" && (
+                    <Link
+                      href="/admin"
+                      className="text-gray-600 hover:text-gray-900 py-2"
+                      onClick={() => setMenuMovil(false)}
+                    >
+                      Administración
+                    </Link>
+                  )}
                   <button onClick={cerrarSesion} className="text-red-600 hover:text-red-700 py-2 text-left">
                     Cerrar sesión
                   </button>

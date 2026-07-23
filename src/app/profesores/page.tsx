@@ -15,6 +15,7 @@ interface Profesor {
   foto: string | null;
   bio: string | null;
   ubicacion: string | null;
+  verificado?: boolean;
   calificacionPromedio: number | null;
   totalResenas: number;
   servicios: {
@@ -175,6 +176,7 @@ function ProfesoresContent() {
                 foto={profesor.foto}
                 bio={profesor.bio}
                 ubicacion={profesor.ubicacion}
+                verificado={profesor.verificado}
                 calificacionPromedio={profesor.calificacionPromedio}
                 totalResenas={profesor.totalResenas}
                 servicios={profesor.servicios}

@@ -26,6 +26,7 @@ export async function GET(
         foto: true,
         bio: true,
         ubicacion: true,
+        verificado: true,
         createdAt: true,
         servicios: {
           where: { activo: true },

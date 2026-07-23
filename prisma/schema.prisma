@@ -60,6 +60,7 @@ enum TipoNotificacion {
   RESENA_NUEVA
   MENSAJE_NUEVO
   PAGO_RECIBIDO
+  PERFIL_VERIFICADO
 }
 
 // ---- MODELOS ----
@@ -76,6 +77,9 @@ model Usuario {
   bio       String?  @db.Text
   ubicacion String?
   activo    Boolean  @default(true)
+  // Verificación manual del profesor por un administrador (insignia de confianza)
+  verificado   Boolean   @default(false)
+  verificadoAt DateTime? @map("verificado_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 

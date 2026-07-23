@@ -37,6 +37,7 @@ export async function GET(
             foto: true,
             bio: true,
             ubicacion: true,
+            verificado: true,
             disponibilidad: {
               select: {
                 diaSemana: true,

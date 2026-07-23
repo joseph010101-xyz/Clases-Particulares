@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
           foto: true,
           bio: true,
           ubicacion: true,
+          verificado: true,
           servicios: {
             where: { activo: true },
             select: {

@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import Card, { CardBody, CardFooter } from "@/components/ui/Card";
+import BadgeVerificado from "@/components/ui/BadgeVerificado";
 
 interface ClaseCardProps {
   id: string;
@@ -21,6 +22,7 @@ interface ClaseCardProps {
     nombre: string;
     foto?: string | null;
     ubicacion?: string | null;
+    verificado?: boolean;
   };
 }
 
@@ -73,7 +75,10 @@ export default function ClaseCard({
               )}
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700">{profesor.nombre}</p>
+              <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                {profesor.nombre}
+                {profesor.verificado && <BadgeVerificado soloIcono />}
+              </p>
               {profesor.ubicacion && (
                 <p className="text-xs text-gray-500">{profesor.ubicacion}</p>
               )}

@@ -23,6 +23,7 @@ interface Servicio {
     id: string;
     nombre: string;
     foto: string | null;
+    verificado?: boolean;
   };
 }
 
