@@ -110,6 +110,12 @@ export default function Navbar() {
             >
               Profesores
             </Link>
+            <Link
+              href="/cursos"
+              className="text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              Cursos
+            </Link>
 
             {usuario && (
               <Link
@@ -212,6 +218,9 @@ export default function Navbar() {
               </Link>
               <Link href="/profesores" className="text-gray-600 hover:text-gray-900 py-2" onClick={() => setMenuMovil(false)}>
                 Profesores
+              </Link>
+              <Link href="/cursos" className="text-gray-600 hover:text-gray-900 py-2" onClick={() => setMenuMovil(false)}>
+                Cursos
               </Link>
               {cargandoAuth ? null : usuario ? (
                 <>

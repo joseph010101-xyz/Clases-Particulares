@@ -55,6 +55,20 @@ npx prisma generate   # regenera el cliente tras cambios de esquema
 | `JWT_SECRET`   | Sí        | Secreto para firmar los JWT de sesión. Genera uno con `openssl rand -base64 32`. |
 | `TZ`           | Recomendada en producción | Zona horaria del servidor. Ver nota abajo. |
 | `NODE_ENV`     | Automática | En `production` la cookie de sesión se marca `secure` automáticamente. |
+| `CLOUDINARY_CLOUD_NAME` | Para el aula virtual | Almacenamiento de archivos del material. Ver abajo. |
+| `CLOUDINARY_API_KEY`    | Para el aula virtual | |
+| `CLOUDINARY_API_SECRET` | Para el aula virtual | |
+
+### Almacenamiento de archivos (Cloudinary)
+
+El material del aula virtual (`/cursos`) se sube a [Cloudinary](https://cloudinary.com)
+(capa gratuita). Sin estas variables, el resto de la app funciona con normalidad
+pero **subir material** devuelve un error 503 indicando que falta configurarlo.
+
+1. Crea una cuenta gratuita en Cloudinary.
+2. En el Dashboard copia **Cloud name**, **API Key** y **API Secret**.
+3. Añade las tres variables (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+   `CLOUDINARY_API_SECRET`) en el servicio de la app en Railway (o en tu `.env`).
 
 > La antigua variable `COOKIE_SECURE` ya no se usa: la cookie se marca `secure`
 > cuando `NODE_ENV === "production"`.

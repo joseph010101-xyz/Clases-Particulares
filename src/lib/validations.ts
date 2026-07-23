@@ -144,6 +144,31 @@ export const categoriaSchema = z.object({
   icono: z.string().max(50).optional(),
 });
 
+// ---- AULA VIRTUAL ----
+
+// Validación para crear/editar un curso
+export const cursoSchema = z.object({
+  titulo: z
+    .string()
+    .trim()
+    .min(3, "El título debe tener al menos 3 caracteres")
+    .max(150, "El título no puede exceder 150 caracteres"),
+  descripcion: z
+    .string()
+    .trim()
+    .min(10, "La descripción debe tener al menos 10 caracteres")
+    .max(3000, "La descripción no puede exceder 3000 caracteres"),
+});
+
+// Validación para el título de un material (el archivo se valida aparte)
+export const materialSchema = z.object({
+  titulo: z
+    .string()
+    .trim()
+    .min(2, "El título debe tener al menos 2 caracteres")
+    .max(150, "El título no puede exceder 150 caracteres"),
+});
+
 // ---- TIPOS INFERIDOS ----
 // Estos tipos se pueden usar en el frontend y backend
 

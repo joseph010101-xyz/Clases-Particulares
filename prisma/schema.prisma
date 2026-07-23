@@ -94,6 +94,9 @@ model Usuario {
   // Mensajes enviados y recibidos
   mensajesEnviados  Mensaje[] @relation("MensajesEnviados")
   mensajesRecibidos Mensaje[] @relation("MensajesRecibidos")
+  // Aula virtual: cursos que imparte (profesor) e inscripciones (estudiante)
+  cursos        Curso[]
+  inscripciones Inscripcion[]
 
   @@map("usuarios")
 }
@@ -227,6 +230,62 @@ model Notificacion {
   @@index([usuarioId])
   @@index([leida])
   @@map("notificaciones")
+}
+
+// ---- AULA VIRTUAL ----
+
+// Curso creado por un profesor (contenedor de material y estudiantes inscritos)
+model Curso {
+  id          String   @id @default(uuid())
+  profesorId  String   @map("profesor_id")
+  titulo      String
+  descripcion String   @db.Text
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  profesor      Usuario       @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+  inscripciones Inscripcion[]
+  materiales    Material[]
+
+  @@index([profesorId])
+  @@map("cursos")
+}
+
+// Inscripción de un estudiante a un curso
+model Inscripcion {
+  id           String   @id @default(uuid())
+  cursoId      String   @map("curso_id")
+  estudianteId String   @map("estudiante_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  curso      Curso   @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  estudiante Usuario @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  // Un estudiante no puede inscribirse dos veces al mismo curso
+  @@unique([cursoId, estudianteId])
+  @@index([estudianteId])
+  @@map("inscripciones")
+}
+
+// Material de clase subido por el profesor (almacenado en Cloudinary)
+model Material {
+  id        String   @id @default(uuid())
+  cursoId   String   @map("curso_id")
+  titulo    String
+  url       String                        // URL de descarga (Cloudinary secure_url)
+  publicId  String   @map("public_id")    // Identificador en Cloudinary (para borrado)
+  formato   String?                        // pdf, xlsx, mp4, ...
+  bytes     Int?                           // tamaño del archivo
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relaciones
+  curso Curso @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+
+  @@index([cursoId])
+  @@map("materiales")
 }
 
 // Mensajes entre usuarios
