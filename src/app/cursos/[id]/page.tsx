@@ -19,6 +19,15 @@ interface Material {
   createdAt: string;
 }
 
+interface TareaResumen {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  fechaLimite: string | null;
+  _count: { entregas: number };
+  entregas?: { id: string; calificacion: number | null }[];
+}
+
 interface CursoDetalle {
   curso: {
     id: string;
@@ -62,14 +71,59 @@ export default function CursoDetallePage() {
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState("");
 
+  // Tareas
+  const [tareas, setTareas] = useState<TareaResumen[]>([]);
+  const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
+  const [tareaTitulo, setTareaTitulo] = useState("");
+  const [tareaDesc, setTareaDesc] = useState("");
+  const [tareaFecha, setTareaFecha] = useState("");
+  const [creandoTarea, setCreandoTarea] = useState(false);
+  const [errorTarea, setErrorTarea] = useState("");
+
   const cargar = useCallback(async () => {
     const res = await fetch(`/api/cursos/${id}`, { cache: "no-store" });
     if (!res.ok) {
       setError("Curso no encontrado");
       return;
     }
-    setData(await res.json());
+    const d = await res.json();
+    setData(d);
+    if (d.puedeVerMaterial) {
+      const tRes = await fetch(`/api/cursos/${id}/tareas`, { cache: "no-store" });
+      setTareas(tRes.ok ? (await tRes.json()).tareas ?? [] : []);
+    } else {
+      setTareas([]);
+    }
   }, [id]);
+
+  const crearTarea = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorTarea("");
+    setCreandoTarea(true);
+    try {
+      const res = await fetch(`/api/cursos/${id}/tareas`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titulo: tareaTitulo,
+          descripcion: tareaDesc,
+          fechaLimite: tareaFecha || null,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorTarea(d.error || "No se pudo crear la tarea");
+        return;
+      }
+      setTareaTitulo("");
+      setTareaDesc("");
+      setTareaFecha("");
+      setMostrarFormTarea(false);
+      await cargar();
+    } finally {
+      setCreandoTarea(false);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -251,6 +305,90 @@ export default function CursoDetallePage() {
           </ul>
         )}
       </div>
+
+      {/* Tareas (visible para dueño e inscritos) */}
+      {puedeVerMaterial && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-900">Tareas</h2>
+            {esDueño && (
+              <Button variante="secondary" tamano="sm" onClick={() => setMostrarFormTarea((v) => !v)}>
+                {mostrarFormTarea ? "Cancelar" : "Crear tarea"}
+              </Button>
+            )}
+          </div>
+
+          {esDueño && mostrarFormTarea && (
+            <form onSubmit={crearTarea} className="space-y-3 mb-4 p-4 bg-gray-50 rounded-lg">
+              {errorTarea && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-lg text-sm">{errorTarea}</div>}
+              <input
+                value={tareaTitulo}
+                onChange={(e) => setTareaTitulo(e.target.value)}
+                placeholder="Título de la tarea"
+                maxLength={150}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <textarea
+                value={tareaDesc}
+                onChange={(e) => setTareaDesc(e.target.value)}
+                rows={3}
+                placeholder="Instrucciones de la tarea"
+                maxLength={3000}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              />
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Fecha límite (opcional)</label>
+                <input
+                  type="datetime-local"
+                  value={tareaFecha}
+                  onChange={(e) => setTareaFecha(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <Button type="submit" cargando={creandoTarea}>Crear tarea</Button>
+            </form>
+          )}
+
+          {tareas.length === 0 ? (
+            <p className="text-sm text-gray-500">No hay tareas todavía.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {tareas.map((t) => {
+                const miEntrega = t.entregas && t.entregas.length > 0 ? t.entregas[0] : null;
+                return (
+                  <li key={t.id} className="py-3">
+                    <Link href={`/tareas/${t.id}`} className="flex items-center justify-between gap-3 group">
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-800 group-hover:text-blue-600 truncate">{t.titulo}</p>
+                        {t.fechaLimite && (
+                          <p className="text-xs text-gray-400">
+                            Límite: {new Date(t.fechaLimite).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 text-xs">
+                        {esDueño ? (
+                          <span className="text-gray-500">{t._count.entregas} entrega{t._count.entregas !== 1 ? "s" : ""}</span>
+                        ) : miEntrega ? (
+                          miEntrega.calificacion != null ? (
+                            <span className="font-medium bg-green-50 text-green-700 rounded-full px-2 py-0.5">Nota: {miEntrega.calificacion}/100</span>
+                          ) : (
+                            <span className="bg-amber-50 text-amber-700 rounded-full px-2 py-0.5">Entregado</span>
+                          )
+                        ) : (
+                          <span className="bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">Sin entregar</span>
+                        )}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

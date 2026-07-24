@@ -62,6 +62,7 @@ enum TipoNotificacion {
   MENSAJE_NUEVO
   PAGO_RECIBIDO
   PERFIL_VERIFICADO
+  ENTREGA_CALIFICADA
 }
 
 // ---- MODELOS ----
@@ -97,6 +98,7 @@ model Usuario {
   // Aula virtual: cursos que imparte (profesor) e inscripciones (estudiante)
   cursos        Curso[]
   inscripciones Inscripcion[]
+  entregas      Entrega[]
 
   @@map("usuarios")
 }
@@ -248,6 +250,7 @@ model Curso {
   profesor      Usuario       @relation(fields: [profesorId], references: [id], onDelete: Cascade)
   inscripciones Inscripcion[]
   materiales    Material[]
+  tareas        Tarea[]
 
   @@index([profesorId])
   @@map("cursos")
@@ -268,6 +271,49 @@ model Inscripcion {
   @@unique([cursoId, estudianteId])
   @@index([estudianteId])
   @@map("inscripciones")
+}
+
+// Tarea/actividad asignada dentro de un curso
+model Tarea {
+  id          String    @id @default(uuid())
+  cursoId     String    @map("curso_id")
+  titulo      String
+  descripcion String    @db.Text
+  fechaLimite DateTime? @map("fecha_limite")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  curso    Curso     @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  entregas Entrega[]
+
+  @@index([cursoId])
+  @@map("tareas")
+}
+
+// Entrega de un estudiante para una tarea (con archivo opcional en Cloudinary)
+model Entrega {
+  id                String    @id @default(uuid())
+  tareaId           String    @map("tarea_id")
+  estudianteId      String    @map("estudiante_id")
+  comentario        String?   @db.Text
+  url               String?                          // archivo entregado (Cloudinary)
+  publicId          String?   @map("public_id")
+  formato           String?
+  bytes             Int?
+  calificacion      Int?                             // nota 0..100 (la pone el profesor)
+  retroalimentacion String?   @db.Text @map("retroalimentacion")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relaciones
+  tarea      Tarea   @relation(fields: [tareaId], references: [id], onDelete: Cascade)
+  estudiante Usuario @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+
+  // Una entrega por estudiante y tarea
+  @@unique([tareaId, estudianteId])
+  @@index([estudianteId])
+  @@map("entregas")
 }
 
 // Material de clase subido por el profesor (almacenado en Cloudinary)

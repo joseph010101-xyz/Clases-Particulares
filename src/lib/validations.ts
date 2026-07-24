@@ -169,6 +169,40 @@ export const materialSchema = z.object({
     .max(150, "El título no puede exceder 150 caracteres"),
 });
 
+// Validación para crear una tarea
+export const tareaSchema = z.object({
+  titulo: z
+    .string()
+    .trim()
+    .min(3, "El título debe tener al menos 3 caracteres")
+    .max(150, "El título no puede exceder 150 caracteres"),
+  descripcion: z
+    .string()
+    .trim()
+    .min(5, "La descripción debe tener al menos 5 caracteres")
+    .max(3000, "La descripción no puede exceder 3000 caracteres"),
+  // Fecha límite opcional en formato ISO o datetime-local
+  fechaLimite: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha límite inválida" }),
+});
+
+// Validación para calificar una entrega
+export const calificacionSchema = z.object({
+  calificacion: z
+    .number()
+    .int()
+    .min(0, "La calificación mínima es 0")
+    .max(100, "La calificación máxima es 100"),
+  retroalimentacion: z
+    .string()
+    .max(2000, "La retroalimentación no puede exceder 2000 caracteres")
+    .optional()
+    .nullable(),
+});
+
 // ---- TIPOS INFERIDOS ----
 // Estos tipos se pueden usar en el frontend y backend
 
