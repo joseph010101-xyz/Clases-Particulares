@@ -2,22 +2,239 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =============================================
+   Sistema de temas
+   Los grises y el acento de Tailwind están mapeados a estas variables
+   (ver tailwind.config.ts), de modo que cambiar el tema repinta toda la
+   aplicación sin tocar los componentes.
+   ============================================= */
+
+/* ---- Tema "sereno" (por defecto): claro, azul confiable ---- */
+:root,
+[data-tema="sereno"] {
+  color-scheme: light;
+
+  --c-surface: #ffffff; /* superficie de tarjetas */
+  --c-primary: #2563eb; /* fondo de botones (siempre seguro con texto blanco) */
+  --c-primary-hover: #1d4ed8;
+
+  --g-50: #f9fafb;
+  --g-100: #f3f4f6;
+  --g-200: #e5e7eb;
+  --g-300: #d1d5db;
+  --g-400: #9ca3af;
+  --g-500: #6b7280;
+  --g-600: #4b5563;
+  --g-700: #374151;
+  --g-800: #1f2937;
+  --g-900: #111827;
+
+  --a-50: #eff6ff;
+  --a-100: #dbeafe;
+  --a-200: #bfdbfe;
+  --a-300: #93c5fd;
+  --a-400: #60a5fa;
+  --a-500: #3b82f6;
+  --a-600: #2563eb;
+  --a-700: #1d4ed8;
+  --a-800: #1e40af;
+  --a-900: #1e3a8a;
+  --a-950: #172554;
+
+  --i-400: #818cf8;
+  --i-500: #6366f1;
+  --i-600: #4f46e5;
+  --i-700: #4338ca;
+  --i-800: #3730a3;
+}
+
+/* ---- Tema "vibrante" (joven): violeta y fucsia, superficies cálidas ---- */
+[data-tema="vibrante"] {
+  color-scheme: light;
+
+  --c-surface: #ffffff;
+  --c-primary: #7c3aed;
+  --c-primary-hover: #6d28d9;
+
+  --g-50: #faf7ff;
+  --g-100: #f4eefc;
+  --g-200: #e9e0f5;
+  --g-300: #d6cbe6;
+  --g-400: #9d94b0;
+  --g-500: #6f6685;
+  --g-600: #52496b;
+  --g-700: #3b3352;
+  --g-800: #271f3a;
+  --g-900: #170f26;
+
+  --a-50: #f5f3ff;
+  --a-100: #ede9fe;
+  --a-200: #ddd6fe;
+  --a-300: #c4b5fd;
+  --a-400: #a78bfa;
+  --a-500: #8b5cf6;
+  --a-600: #7c3aed;
+  --a-700: #6d28d9;
+  --a-800: #5b21b6;
+  --a-900: #4c1d95;
+  --a-950: #2e1065;
+
+  --i-400: #e879f9;
+  --i-500: #d946ef;
+  --i-600: #c026d3;
+  --i-700: #a21caf;
+  --i-800: #86198f;
+}
+
+/* ---- Tema "clásico" (adulto): neutros cálidos y azul profundo ---- */
+[data-tema="clasico"] {
+  color-scheme: light;
+
+  --c-surface: #fffdfb;
+  --c-primary: #1e40af;
+  --c-primary-hover: #1e3a8a;
+
+  --g-50: #faf9f7;
+  --g-100: #f4f2ee;
+  --g-200: #e7e3dc;
+  --g-300: #d5cfc5;
+  --g-400: #a29a8c;
+  --g-500: #756c5e;
+  --g-600: #574f43;
+  --g-700: #40392f;
+  --g-800: #2a251d;
+  --g-900: #1a160f;
+
+  --a-50: #eff6ff;
+  --a-100: #dbeafe;
+  --a-200: #c7dcfb;
+  --a-300: #93b4e8;
+  --a-400: #5b86c9;
+  --a-500: #2f5ea8;
+  --a-600: #1e40af;
+  --a-700: #1e3a8a;
+  --a-800: #172554;
+  --a-900: #101a3d;
+  --a-950: #0a1128;
+
+  --i-400: #7c8fb5;
+  --i-500: #4c6796;
+  --i-600: #33507f;
+  --i-700: #243d66;
+  --i-800: #172554;
+}
+
+/* ---- Tema "noche" (oscuro): descanso visual, acento luminoso ---- */
+[data-tema="noche"] {
+  color-scheme: dark;
+
+  --c-surface: #161b26; /* tarjetas sobre el fondo oscuro */
+  --c-primary: #2563eb;
+  --c-primary-hover: #1d4ed8;
+
+  /* Escala invertida: 50 es el fondo más oscuro y 900 el texto más claro */
+  --g-50: #0d1117;
+  --g-100: #131822;
+  --g-200: #232a38;
+  --g-300: #2e3646;
+  --g-400: #8b93a5;
+  --g-500: #a7aec0;
+  --g-600: #c3c9d6;
+  --g-700: #d8dde7;
+  --g-800: #eaeef4;
+  --g-900: #f6f8fb;
+
+  --a-50: #16243d;
+  --a-100: #1b2e4d;
+  --a-200: #26436e;
+  --a-300: #3b6bb0;
+  --a-400: #60a5fa;
+  --a-500: #3b82f6;
+  --a-600: #2563eb;
+  --a-700: #1d4ed8;
+  --a-800: #1e40af;
+  --a-900: #1e3a8a;
+  --a-950: #0b1220;
+
+  --i-400: #818cf8;
+  --i-500: #6366f1;
+  --i-600: #4f46e5;
+  --i-700: #4338ca;
+  --i-800: #312e81;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--g-900);
+  background: var(--g-50);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Forzar texto oscuro en inputs para evitar herencia de color del sistema */
+/* Al cambiar de tema se anima brevemente toda la interfaz */
+html.cambiando-tema *,
+html.cambiando-tema *::before,
+html.cambiando-tema *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+}
+
+/* Campos de formulario: siguen la superficie y el texto del tema */
 input,
 textarea,
 select {
-  color: #171717;
+  color: var(--g-900);
+  background-color: var(--c-surface);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--g-400);
+}
+
+/* En el tema oscuro, las superficies blancas y los acentos de texto se ajustan
+   para mantener el contraste sin reescribir los componentes. */
+[data-tema="noche"] .bg-white {
+  background-color: var(--c-surface);
+}
+[data-tema="noche"] .text-blue-600,
+[data-tema="noche"] .text-blue-700,
+[data-tema="noche"] .text-blue-800 {
+  color: #8ab4ff;
+}
+[data-tema="noche"] .bg-green-50 {
+  background-color: #10251c;
+}
+[data-tema="noche"] .text-green-700,
+[data-tema="noche"] .text-green-800 {
+  color: #6ee7b7;
+}
+[data-tema="noche"] .bg-red-50 {
+  background-color: #2a1417;
+}
+[data-tema="noche"] .text-red-600,
+[data-tema="noche"] .text-red-700 {
+  color: #fca5a5;
+}
+[data-tema="noche"] .bg-amber-50 {
+  background-color: #2a2110;
+}
+[data-tema="noche"] .text-amber-600,
+[data-tema="noche"] .text-amber-700 {
+  color: #fcd34d;
+}
+[data-tema="noche"] .bg-orange-50 {
+  background-color: #2a1c10;
+}
+[data-tema="noche"] .text-orange-700 {
+  color: #fdba74;
+}
+[data-tema="noche"] .bg-purple-50 {
+  background-color: #211537;
+}
+[data-tema="noche"] .text-purple-700 {
+  color: #d8b4fe;
+}
+[data-tema="noche"] .bg-yellow-50 {
+  background-color: #2a2410;
 }
 
 @layer utilities {

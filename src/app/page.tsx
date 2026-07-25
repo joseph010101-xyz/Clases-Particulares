@@ -71,7 +71,7 @@ export default function Home() {
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <Link
                   href="/clases"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-white text-blue-700 font-semibold rounded-lg shadow-lg shadow-blue-900/20 hover:bg-blue-50 hover:-translate-y-0.5 transition-all"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-[#ffffff] text-[#1d4ed8] font-semibold rounded-lg shadow-lg shadow-black/20 hover:bg-[#eef4ff] hover:-translate-y-0.5 transition-all"
                 >
                   Buscar clases
                 </Link>
@@ -116,8 +116,8 @@ export default function Home() {
       </section>
 
       {/* CTA para profesores */}
-      <section className="relative overflow-hidden bg-gray-900 text-white py-20">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-blue-950" />
+      <section className="relative overflow-hidden text-white py-20">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950" />
         <FadeIn className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold">¿Eres profesor?</h2>
           <p className="mt-4 text-gray-300 max-w-2xl mx-auto">

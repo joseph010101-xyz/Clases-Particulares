@@ -11,6 +11,8 @@ import Button from "@/components/ui/Button";
 import ProfesorForm from "@/components/profesores/ProfesorForm";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
+import Select from "@/components/ui/Select";
+import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 
 interface Servicio {
@@ -461,33 +463,20 @@ export default function ProfesorDashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Día</label>
-                <select
-                  value={nuevoDia}
-                  onChange={(e) => setNuevoDia(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  {DIAS_SEMANA.map((dia, i) => (
-                    <option key={i} value={i}>{dia}</option>
-                  ))}
-                </select>
+                <Select
+                  valor={String(nuevoDia)}
+                  onChange={(v) => setNuevoDia(Number(v))}
+                  ariaLabel="Día de la semana"
+                  opciones={DIAS_SEMANA.map((dia, i) => ({ valor: String(i), etiqueta: dia }))}
+                />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Hora inicio</label>
-                <input
-                  type="time"
-                  value={nuevaHoraInicio}
-                  onChange={(e) => setNuevaHoraInicio(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                />
+                <SelectorHora valor={nuevaHoraInicio} onChange={setNuevaHoraInicio} paso={15} />
               </div>
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Hora fin</label>
-                <input
-                  type="time"
-                  value={nuevaHoraFin}
-                  onChange={(e) => setNuevaHoraFin(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                />
+                <SelectorHora valor={nuevaHoraFin} onChange={setNuevaHoraFin} paso={15} horaMax="23:00" />
               </div>
               <div className="flex items-end">
                 <Button onClick={handleCrearDisponibilidad} className="w-full">Agregar</Button>

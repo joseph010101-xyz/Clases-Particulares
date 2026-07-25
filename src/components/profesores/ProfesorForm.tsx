@@ -7,6 +7,7 @@
 
 import { useState, FormEvent } from "react";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
 
 interface ProfesorFormProps {
   datosIniciales?: {
@@ -83,32 +84,34 @@ export default function ProfesorForm({ datosIniciales, onSubmit, cargando }: Pro
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Duración (minutos)</label>
-          <select
-            value={duracionMin}
-            onChange={(e) => setDuracionMin(Number(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value={30}>30 min</option>
-            <option value={45}>45 min</option>
-            <option value={60}>1 hora</option>
-            <option value={90}>1.5 horas</option>
-            <option value={120}>2 horas</option>
-          </select>
+          <Select
+            valor={String(duracionMin)}
+            onChange={(v) => setDuracionMin(Number(v))}
+            ariaLabel="Duración"
+            opciones={[
+              { valor: "30", etiqueta: "30 min" },
+              { valor: "45", etiqueta: "45 min" },
+              { valor: "60", etiqueta: "1 hora" },
+              { valor: "90", etiqueta: "1.5 horas" },
+              { valor: "120", etiqueta: "2 horas" },
+            ]}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad *</label>
-          <select
-            value={modalidad}
-            onChange={(e) => setModalidad(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="VIRTUAL">Virtual</option>
-            <option value="PRESENCIAL">Presencial</option>
-            <option value="AMBOS">Ambos</option>
-          </select>
+          <Select
+            valor={modalidad}
+            onChange={setModalidad}
+            ariaLabel="Modalidad"
+            opciones={[
+              { valor: "VIRTUAL", etiqueta: "Virtual" },
+              { valor: "PRESENCIAL", etiqueta: "Presencial" },
+              { valor: "AMBOS", etiqueta: "Ambos" },
+            ]}
+          />
         </div>
 
         <div>

@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { ConfirmProvider } from "@/components/ui/ConfirmProvider";
+import { TemaProvider, SCRIPT_TEMA } from "@/components/tema/TemaProvider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -28,16 +29,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" data-tema="sereno">
+      <head>
+        {/* Aplica el tema guardado antes del primer pintado (evita el parpadeo) */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}
       >
-        <ConfirmProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </ConfirmProvider>
-        <Toaster richColors position="top-center" closeButton />
+        <TemaProvider>
+          <ConfirmProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ConfirmProvider>
+          <Toaster richColors position="top-center" closeButton />
+        </TemaProvider>
       </body>
     </html>
   );

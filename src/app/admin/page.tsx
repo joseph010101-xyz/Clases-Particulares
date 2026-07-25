@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
 import Cargando from "@/components/ui/Cargando";
+import Select from "@/components/ui/Select";
 import { puedeModerar, puedeAdministrarUsuarios, ROLES_ASIGNABLES, type Rol } from "@/lib/dominio/permisos";
 
 interface ProfesorAdmin {
@@ -274,19 +275,14 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      <label className="sr-only" htmlFor={`rol-${u.id}`}>Rol</label>
-                      <select
-                        id={`rol-${u.id}`}
-                        value={u.rol}
+                      <Select
+                        className="w-40"
+                        valor={u.rol}
                         disabled={esYo || procesando === u.id}
-                        onChange={(e) => actualizarUsuario(u.id, { rol: e.target.value as Rol })}
-                        className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                        title={esYo ? "No puedes cambiar tu propio rol" : "Cambiar rol"}
-                      >
-                        {ROLES_ASIGNABLES.map((r) => (
-                          <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => actualizarUsuario(u.id, { rol: v as Rol })}
+                        ariaLabel={esYo ? "No puedes cambiar tu propio rol" : "Cambiar rol"}
+                        opciones={ROLES_ASIGNABLES.map((r) => ({ valor: r, etiqueta: ETIQUETA_ROL[r] }))}
+                      />
                       <Button
                         variante={u.activo ? "danger" : "secondary"}
                         tamano="sm"

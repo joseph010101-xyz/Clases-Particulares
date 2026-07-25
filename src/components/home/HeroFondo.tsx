@@ -19,8 +19,9 @@ export default function HeroFondo() {
         }}
       />
       {/* Blobs difuminados en movimiento lento */}
+      {/* Los blobs usan el acento del tema para acompañar la personalización */}
       <motion.div
-        className="absolute -top-24 -left-16 w-96 h-96 rounded-full bg-sky-400/30 blur-3xl"
+        className="absolute -top-24 -left-16 w-96 h-96 rounded-full bg-blue-400/30 blur-3xl"
         animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -30,7 +31,7 @@ export default function HeroFondo() {
         transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-16 left-1/3 w-72 h-72 rounded-full bg-cyan-300/20 blur-3xl"
+        className="absolute -bottom-16 left-1/3 w-72 h-72 rounded-full bg-blue-300/20 blur-3xl"
         animate={{ x: [0, 24, 0], y: [0, -24, 0] }}
         transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />

@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
 import Cargando from "@/components/ui/Cargando";
+import SelectorFecha from "@/components/ui/SelectorFecha";
+import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 
 interface Material {
@@ -81,6 +83,7 @@ export default function CursoDetallePage() {
   const [tareaTitulo, setTareaTitulo] = useState("");
   const [tareaDesc, setTareaDesc] = useState("");
   const [tareaFecha, setTareaFecha] = useState("");
+  const [tareaHora, setTareaHora] = useState("23:59");
   const [creandoTarea, setCreandoTarea] = useState(false);
   const [errorTarea, setErrorTarea] = useState("");
 
@@ -111,7 +114,8 @@ export default function CursoDetallePage() {
         body: JSON.stringify({
           titulo: tareaTitulo,
           descripcion: tareaDesc,
-          fechaLimite: tareaFecha || null,
+          // Se combinan fecha y hora en el formato que espera la API
+          fechaLimite: tareaFecha ? `${tareaFecha}T${tareaHora || "23:59"}` : null,
         }),
       });
       const d = await res.json().catch(() => ({}));
@@ -358,12 +362,21 @@ export default function CursoDetallePage() {
               />
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Fecha límite (opcional)</label>
-                <input
-                  type="datetime-local"
-                  value={tareaFecha}
-                  onChange={(e) => setTareaFecha(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <SelectorFecha
+                    valor={tareaFecha}
+                    onChange={setTareaFecha}
+                    placeholder="Sin fecha límite"
+                  />
+                  <SelectorHora
+                    valor={tareaHora}
+                    onChange={setTareaHora}
+                    paso={30}
+                    horaMax="23:30"
+                    disabled={!tareaFecha}
+                    placeholder={tareaFecha ? "Hora límite" : "Elige la fecha"}
+                  />
+                </div>
               </div>
               <Button type="submit" cargando={creandoTarea}>Crear tarea</Button>
             </form>

@@ -8,6 +8,7 @@ import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import ClaseCard from "@/components/clases/ClaseCard";
 import Button from "@/components/ui/Button";
+import Select from "@/components/ui/Select";
 import { FadeIn } from "@/components/ui/Motion";
 
 interface Servicio {
@@ -134,31 +135,35 @@ function ClasesContent() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad</label>
-            <select
-              value={modalidad}
-              onChange={(e) => setModalidad(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Todas</option>
-              <option value="PRESENCIAL">Presencial</option>
-              <option value="VIRTUAL">Virtual</option>
-              <option value="AMBOS">Ambas</option>
-            </select>
+            <Select
+              valor={modalidad}
+              onChange={setModalidad}
+              placeholder="Todas"
+              ariaLabel="Modalidad"
+              opciones={[
+                { valor: "", etiqueta: "Todas" },
+                { valor: "PRESENCIAL", etiqueta: "Presencial" },
+                { valor: "VIRTUAL", etiqueta: "Virtual" },
+                { valor: "AMBOS", etiqueta: "Ambas" },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
-            <select
-              value={nivel}
-              onChange={(e) => setNivel(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Todos</option>
-              <option value="PRIMARIA">Primaria</option>
-              <option value="SECUNDARIA">Secundaria</option>
-              <option value="BACHILLERATO">Bachillerato</option>
-              <option value="UNIVERSIDAD">Universidad</option>
-              <option value="ADULTOS">Adultos</option>
-            </select>
+            <Select
+              valor={nivel}
+              onChange={setNivel}
+              placeholder="Todos"
+              ariaLabel="Nivel"
+              opciones={[
+                { valor: "", etiqueta: "Todos" },
+                { valor: "PRIMARIA", etiqueta: "Primaria" },
+                { valor: "SECUNDARIA", etiqueta: "Secundaria" },
+                { valor: "BACHILLERATO", etiqueta: "Bachillerato" },
+                { valor: "UNIVERSIDAD", etiqueta: "Universidad" },
+                { valor: "ADULTOS", etiqueta: "Adultos" },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Precio mín.</label>
