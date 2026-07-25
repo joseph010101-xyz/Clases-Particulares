@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         rol: true,
         activo: true,
         verificado: true,
+        ultimoAcceso: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },

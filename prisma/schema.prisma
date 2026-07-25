@@ -82,6 +82,8 @@ model Usuario {
   // Verificación manual del profesor por un administrador (insignia de confianza)
   verificado   Boolean   @default(false)
   verificadoAt DateTime? @map("verificado_at")
+  // Última vez que el usuario inició sesión (seguimiento de actividad)
+  ultimoAcceso DateTime? @map("ultimo_acceso")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -232,6 +234,35 @@ model Notificacion {
   @@index([usuarioId])
   @@index([leida])
   @@map("notificaciones")
+}
+
+// ---- AUDITORÍA ----
+
+// Acciones administrativas que quedan registradas
+enum AccionAuditoria {
+  PROFESOR_VERIFICADO
+  PROFESOR_VERIFICACION_REVOCADA
+  USUARIO_ACTIVADO
+  USUARIO_DESACTIVADO
+  ROL_CAMBIADO
+}
+
+// Registro de acciones sensibles. A propósito NO tiene relaciones con Usuario:
+// los datos del actor y del objetivo se guardan desnormalizados para que el
+// historial sobreviva aunque la cuenta implicada se elimine.
+model RegistroAuditoria {
+  id             String          @id @default(uuid())
+  actorId        String?         @map("actor_id")
+  actorNombre    String          @map("actor_nombre")
+  accion         AccionAuditoria
+  objetivoId     String?         @map("objetivo_id")
+  objetivoNombre String?         @map("objetivo_nombre")
+  detalle        String?         @db.Text
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@map("registros_auditoria")
 }
 
 // ---- AULA VIRTUAL ----

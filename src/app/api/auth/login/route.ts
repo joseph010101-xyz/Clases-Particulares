@@ -53,6 +53,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Registrar el acceso para el seguimiento de actividad (no bloquea el login)
+    prisma.usuario
+      .update({ where: { id: usuario.id }, data: { ultimoAcceso: new Date() } })
+      .catch((e) => console.error("No se pudo registrar el último acceso:", e));
+
     // Crear token JWT
     const token = await crearToken({
       userId: usuario.id,

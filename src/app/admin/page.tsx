@@ -14,6 +14,10 @@ import Button from "@/components/ui/Button";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
 import Cargando from "@/components/ui/Cargando";
 import Select from "@/components/ui/Select";
+import PanelResumen from "@/components/admin/PanelResumen";
+import PanelAuditoria from "@/components/admin/PanelAuditoria";
+import FichaUsuario from "@/components/admin/FichaUsuario";
+import { tiempoRelativo } from "@/lib/auditoriaUI";
 import { puedeModerar, puedeAdministrarUsuarios, ROLES_ASIGNABLES, type Rol } from "@/lib/dominio/permisos";
 
 interface ProfesorAdmin {
@@ -33,6 +37,7 @@ interface UsuarioAdmin {
   email: string;
   rol: Rol;
   activo: boolean;
+  ultimoAcceso: string | null;
   createdAt: string;
 }
 
@@ -50,7 +55,11 @@ export default function AdminPage() {
   const [miId, setMiId] = useState<string | null>(null);
   const [miRol, setMiRol] = useState<Rol | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [pestana, setPestana] = useState<"profesores" | "usuarios">("profesores");
+  const [pestana, setPestana] = useState<"resumen" | "profesores" | "usuarios" | "auditoria">(
+    "resumen"
+  );
+  // Usuario cuya ficha se está consultando
+  const [fichaId, setFichaId] = useState<string | null>(null);
 
   // Estado de la pestaña Profesores
   const [profesores, setProfesores] = useState<ProfesorAdmin[]>([]);
@@ -152,10 +161,21 @@ export default function AdminPage() {
       </p>
 
       {/* Pestañas principales */}
-      <div className="flex gap-2 border-b border-gray-200 mb-6">
+      <div className="flex gap-1 sm:gap-2 border-b border-gray-200 mb-6 overflow-x-auto">
         <button
-          onClick={() => setPestana("profesores")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+          onClick={() => setPestana("resumen")}
+          className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+            pestana === "resumen" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Resumen
+        </button>
+        <button
+          onClick={() => {
+            setPestana("profesores");
+            cargarProfesores(filtroProf);
+          }}
+          className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
             pestana === "profesores" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -167,14 +187,28 @@ export default function AdminPage() {
               setPestana("usuarios");
               cargarUsuarios(busqueda);
             }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               pestana === "usuarios" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             Usuarios y roles
           </button>
         )}
+        <button
+          onClick={() => setPestana("auditoria")}
+          className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+            pestana === "auditoria" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Auditoría
+        </button>
       </div>
+
+      {/* --- Pestaña Resumen --- */}
+      {pestana === "resumen" && <PanelResumen />}
+
+      {/* --- Pestaña Auditoría --- */}
+      {pestana === "auditoria" && <PanelAuditoria />}
 
       {/* --- Pestaña Profesores --- */}
       {pestana === "profesores" && (
@@ -213,6 +247,13 @@ export default function AdminPage() {
                     <p className="text-xs text-gray-400 mt-1">
                       {p._count.servicios} servicio{p._count.servicios !== 1 ? "s" : ""}
                       {p.ubicacion ? ` · ${p.ubicacion}` : ""} · Registrado el {new Date(p.createdAt).toLocaleDateString("es-ES")}
+                      {" · "}
+                      <button
+                        onClick={() => setFichaId(p.id)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Ver ficha
+                      </button>
                     </p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
@@ -265,13 +306,24 @@ export default function AdminPage() {
                   <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-gray-900">{u.nombre}</span>
+                        <button
+                          onClick={() => setFichaId(u.id)}
+                          className="font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                          title="Ver ficha completa"
+                        >
+                          {u.nombre}
+                        </button>
                         {esYo && <span className="text-xs text-blue-600">(tú)</span>}
                         {!u.activo && (
                           <span className="text-xs font-medium bg-red-50 text-red-600 rounded-full px-2 py-0.5">Desactivado</span>
                         )}
                       </div>
                       <p className="text-sm text-gray-500">{u.email}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {u.ultimoAcceso
+                          ? `Última conexión ${tiempoRelativo(u.ultimoAcceso)}`
+                          : "Sin conexiones registradas"}
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2 flex-shrink-0">
@@ -300,6 +352,9 @@ export default function AdminPage() {
           )}
         </>
       )}
+
+      {/* Ficha detallada del usuario seleccionado */}
+      <FichaUsuario usuarioId={fichaId} onCerrar={() => setFichaId(null)} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeAdministrarUsuarios, esRolAsignable, type Rol } from "@/lib/dominio/permisos";
+import { auditar } from "@/lib/auditoria";
 
 export async function PATCH(
   request: NextRequest,
@@ -52,10 +53,14 @@ export async function PATCH(
       }
     }
 
-    const usuario = await prisma.usuario.findUnique({ where: { id }, select: { id: true } });
+    const usuario = await prisma.usuario.findUnique({
+      where: { id },
+      select: { id: true, rol: true },
+    });
     if (!usuario) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
+    const rolAnterior = usuario.rol;
 
     const actualizado = await prisma.usuario.update({
       where: { id },
@@ -65,6 +70,25 @@ export async function PATCH(
       },
       select: { id: true, nombre: true, email: true, rol: true, activo: true },
     });
+
+    // Registrar los cambios para el historial de auditoría
+    if (rol !== undefined && rol !== rolAnterior) {
+      await auditar({
+        actor: payload,
+        accion: "ROL_CAMBIADO",
+        objetivoId: id,
+        objetivoNombre: actualizado.nombre,
+        detalle: `${rolAnterior} → ${rol}`,
+      });
+    }
+    if (typeof activo === "boolean") {
+      await auditar({
+        actor: payload,
+        accion: activo ? "USUARIO_ACTIVADO" : "USUARIO_DESACTIVADO",
+        objetivoId: id,
+        objetivoNombre: actualizado.nombre,
+      });
+    }
 
     return NextResponse.json({ mensaje: "Usuario actualizado", usuario: actualizado });
   } catch (error) {

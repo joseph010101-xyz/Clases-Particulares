@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeModerar } from "@/lib/dominio/permisos";
 import { notificar } from "@/lib/notificaciones";
+import { auditar } from "@/lib/auditoria";
 
 export async function PATCH(
   request: NextRequest,
@@ -60,6 +61,24 @@ export async function PATCH(
         tipo: "PERFIL_VERIFICADO",
         mensaje: "¡Tu perfil ha sido verificado! Ahora muestras la insignia de profesor verificado.",
         enlace: "/profesores/dashboard",
+      });
+    }
+
+    // Dejar constancia de quién moderó y qué cambió
+    if (typeof verificado === "boolean") {
+      await auditar({
+        actor: payload,
+        accion: verificado ? "PROFESOR_VERIFICADO" : "PROFESOR_VERIFICACION_REVOCADA",
+        objetivoId: id,
+        objetivoNombre: actualizado.nombre,
+      });
+    }
+    if (typeof activo === "boolean") {
+      await auditar({
+        actor: payload,
+        accion: activo ? "USUARIO_ACTIVADO" : "USUARIO_DESACTIVADO",
+        objetivoId: id,
+        objetivoNombre: actualizado.nombre,
       });
     }
 
