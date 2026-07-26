@@ -228,6 +228,13 @@ export default function EstudianteDashboardPage() {
 
       {tab === "reservas" && (
       <>
+      {reservas.length > 0 && (
+        <div className="flex justify-end mb-4">
+          <a href="/api/reservas/exportar" download>
+            <Button variante="secondary" tamano="sm">Exportar a CSV</Button>
+          </a>
+        </div>
+      )}
       {/* Reservas */}
       <div className="space-y-8">
         {/* Activas */}

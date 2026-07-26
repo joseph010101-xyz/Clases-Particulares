@@ -317,6 +317,9 @@ export default function AdminPage() {
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <Button type="submit" variante="secondary">Buscar</Button>
+            <a href="/api/admin/usuarios/exportar" download>
+              <Button type="button" variante="ghost">Exportar CSV</Button>
+            </a>
           </form>
 
           {usuarios.length === 0 ? (

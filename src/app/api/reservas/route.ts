@@ -11,6 +11,7 @@ import { obtenerUsuarioActual } from "@/lib/auth";
 import { reservaSchema } from "@/lib/validations";
 import { esDiaPasado, jsDayADiaSemana, filtroSolapamientoPrisma } from "@/lib/dominio";
 import { notificar } from "@/lib/notificaciones";
+import { expirarReservasPendientes } from "@/lib/expiracion";
 
 // Error interno para abortar la transacción cuando un horario ya está ocupado.
 class ConflictoReserva extends Error {}
@@ -22,6 +23,10 @@ export async function GET(request: NextRequest) {
     if (!payload) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
+
+    // Antes de listar se caducan las solicitudes sin responder, para que el
+    // usuario vea el estado real y los horarios queden liberados.
+    await expirarReservasPendientes();
 
     const { searchParams } = new URL(request.url);
     const pagina = Math.max(1, parseInt(searchParams.get("pagina") || "1"));
@@ -166,6 +171,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Liberar horarios de solicitudes caducadas antes de comprobar solapamientos
+    await expirarReservasPendientes();
 
     // Las verificaciones de solapamiento y la creación se ejecutan dentro de una
     // transacción Serializable: si dos estudiantes intentan reservar el mismo

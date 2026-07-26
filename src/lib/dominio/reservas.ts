@@ -79,6 +79,31 @@ export function esDiaPasado(fecha: Date, ahora: Date = new Date()): boolean {
   return inicioFecha < inicioHoy;
 }
 
+// Horas que tiene el profesor para responder una solicitud antes de que caduque
+export const PLAZO_RESPUESTA_HORAS = 48;
+
+/**
+ * Indica si una reserva PENDIENTE debe caducar. Ocurre en dos casos:
+ *  1. La clase ya empezó y el profesor nunca la confirmó.
+ *  2. Pasó el plazo de respuesta desde que se solicitó.
+ * Sin esto, una solicitud ignorada mantiene el horario bloqueado para el resto
+ * de estudiantes.
+ */
+export function reservaPendienteCaducada(
+  fecha: Date,
+  horaInicio: string,
+  creadaEn: Date,
+  ahora: Date = new Date()
+): boolean {
+  const [horas, minutos] = horaInicio.split(":").map(Number);
+  const inicioClase = new Date(fecha);
+  inicioClase.setHours(horas, minutos, 0, 0);
+  if (ahora.getTime() >= inicioClase.getTime()) return true;
+
+  const limiteRespuesta = creadaEn.getTime() + PLAZO_RESPUESTA_HORAS * 60 * 60 * 1000;
+  return ahora.getTime() >= limiteRespuesta;
+}
+
 /**
  * Indica si la clase de una reserva (día `fecha` que termina a `horaFin`) ya
  * concluyó respecto de `ahora`. Impide marcar como COMPLETADA una clase que

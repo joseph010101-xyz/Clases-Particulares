@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import ProfesorForm from "@/components/profesores/ProfesorForm";
+import AgendaSemanal from "@/components/profesores/AgendaSemanal";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -75,7 +76,9 @@ export default function ProfesorDashboardPage() {
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [tab, setTab] = useState<"servicios" | "reservas" | "disponibilidad" | "perfil">("servicios");
+  const [tab, setTab] = useState<
+    "servicios" | "agenda" | "reservas" | "disponibilidad" | "perfil"
+  >("servicios");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicioEditando, setServicioEditando] = useState<Servicio | null>(null);
   // Disponibilidad form state
@@ -297,7 +300,7 @@ export default function ProfesorDashboardPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 mb-6 w-fit flex-wrap">
         <button
           onClick={() => setTab("servicios")}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -305,6 +308,14 @@ export default function ProfesorDashboardPage() {
           }`}
         >
           Mis servicios
+        </button>
+        <button
+          onClick={() => setTab("agenda")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "agenda" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Agenda
         </button>
         <button
           onClick={() => setTab("reservas")}
@@ -425,12 +436,28 @@ export default function ProfesorDashboardPage() {
         </div>
       )}
 
+      {tab === "agenda" && (
+        <AgendaSemanal disponibilidades={disponibilidades} reservas={reservas} />
+      )}
+
       {tab === "reservas" && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Reservas recibidas</h2>
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <h2 className="text-lg font-semibold text-gray-900">Reservas recibidas</h2>
+            {reservas.length > 0 && (
+              <a href="/api/reservas/exportar" download>
+                <Button variante="secondary" tamano="sm">
+                  Exportar a CSV
+                </Button>
+              </a>
+            )}
+          </div>
           {reservas.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
               <p className="text-gray-500">Aún no tienes reservas.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Publica un servicio y define tus horarios para que los estudiantes puedan reservarte.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">

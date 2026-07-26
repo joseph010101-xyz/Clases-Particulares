@@ -3,6 +3,8 @@ import {
   validarTransicionReserva,
   esDiaPasado,
   reservaYaOcurrio,
+  reservaPendienteCaducada,
+  PLAZO_RESPUESTA_HORAS,
 } from "./reservas";
 
 const PROFESOR = { esProfesor: true, esEstudiante: false };
@@ -64,6 +66,35 @@ describe("esDiaPasado", () => {
 
   it("no marca un día futuro como pasado", () => {
     expect(esDiaPasado(new Date(2026, 6, 24), ahora)).toBe(false);
+  });
+});
+
+describe("reservaPendienteCaducada", () => {
+  const ahora = new Date(2026, 6, 23, 10, 0); // 23-jul-2026 10:00
+  const horas = (n: number) => new Date(ahora.getTime() - n * 60 * 60 * 1000);
+
+  it("caduca si la clase ya empezó y seguía pendiente", () => {
+    // Clase de hoy a las 09:00, solicitada hace 1 hora
+    expect(reservaPendienteCaducada(new Date(2026, 6, 23), "09:00", horas(1), ahora)).toBe(true);
+  });
+
+  it("caduca si el profesor no respondió dentro del plazo", () => {
+    // Clase dentro de un mes pero solicitada hace más del plazo
+    const creada = horas(PLAZO_RESPUESTA_HORAS + 1);
+    expect(reservaPendienteCaducada(new Date(2026, 7, 23), "10:00", creada, ahora)).toBe(true);
+  });
+
+  it("no caduca una solicitud reciente para una clase futura", () => {
+    expect(reservaPendienteCaducada(new Date(2026, 6, 25), "10:00", horas(2), ahora)).toBe(false);
+  });
+
+  it("no caduca justo antes de cumplirse el plazo", () => {
+    const creada = horas(PLAZO_RESPUESTA_HORAS - 1);
+    expect(reservaPendienteCaducada(new Date(2026, 7, 23), "10:00", creada, ahora)).toBe(false);
+  });
+
+  it("no caduca una clase de hoy que aún no ha empezado", () => {
+    expect(reservaPendienteCaducada(new Date(2026, 6, 23), "18:00", horas(1), ahora)).toBe(false);
   });
 });
 
