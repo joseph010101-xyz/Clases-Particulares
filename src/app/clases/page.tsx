@@ -21,6 +21,7 @@ interface Servicio {
   duracionMin: number;
   calificacionPromedio: number | null;
   totalResenas: number;
+  categoria?: { id: string; nombre: string; icono: string | null } | null;
   profesor: {
     id: string;
     nombre: string;
@@ -61,6 +62,19 @@ function ClasesContent() {
   const [nivel, setNivel] = useState(searchParams.get("nivel") || "");
   const [precioMin, setPrecioMin] = useState(searchParams.get("precioMin") || "");
   const [precioMax, setPrecioMax] = useState(searchParams.get("precioMax") || "");
+  const [categoriaId, setCategoriaId] = useState(searchParams.get("categoriaId") || "");
+  const [orden, setOrden] = useState(searchParams.get("orden") || "recientes");
+  const [categorias, setCategorias] = useState<{ id: string; nombre: string; icono: string | null }[]>([]);
+
+  // Catálogo de categorías para el filtro
+  useEffect(() => {
+    fetch("/api/categorias")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.categorias) setCategorias(d.categorias);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchServicios = useCallback(async (pagina: number) => {
     setCargando(true);
@@ -71,6 +85,8 @@ function ClasesContent() {
       if (nivel) params.set("nivel", nivel);
       if (precioMin) params.set("precioMin", precioMin);
       if (precioMax) params.set("precioMax", precioMax);
+      if (categoriaId) params.set("categoriaId", categoriaId);
+      if (orden && orden !== "recientes") params.set("orden", orden);
       params.set("pagina", String(pagina));
       params.set("limite", "12");
 
@@ -87,7 +103,7 @@ function ClasesContent() {
     } finally {
       setCargando(false);
     }
-  }, [materia, modalidad, nivel, precioMin, precioMax]);
+  }, [materia, modalidad, nivel, precioMin, precioMax, categoriaId, orden]);
 
   useEffect(() => {
     fetchServicios(1);
@@ -100,6 +116,8 @@ function ClasesContent() {
     if (nivel) params.set("nivel", nivel);
     if (precioMin) params.set("precioMin", precioMin);
     if (precioMax) params.set("precioMax", precioMax);
+    if (categoriaId) params.set("categoriaId", categoriaId);
+    if (orden && orden !== "recientes") params.set("orden", orden);
     router.push(`/clases?${params.toString()}`);
     fetchServicios(1);
   };
@@ -110,19 +128,71 @@ function ClasesContent() {
     setNivel("");
     setPrecioMin("");
     setPrecioMax("");
+    setCategoriaId("");
+    setOrden("recientes");
     router.push("/clases");
   };
 
+  const categoriaActiva = categorias.find((c) => c.id === categoriaId);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Clases disponibles</h1>
-        <p className="mt-2 text-gray-600">Encuentra la clase particular perfecta para ti</p>
+        <p className="mt-2 text-gray-600">
+          {categoriaActiva
+            ? `Explorando ${categoriaActiva.nombre}`
+            : "Encuentra la clase particular perfecta para ti"}
+        </p>
       </div>
+
+      {/* Categorías: acceso rápido por área de estudio */}
+      {categorias.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setCategoriaId("")}
+            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+              categoriaId === ""
+                ? "bg-primario text-white border-transparent"
+                : "bg-superficie text-gray-600 border-gray-300 hover:border-gray-400"
+            }`}
+          >
+            Todas
+          </button>
+          {categorias.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setCategoriaId(c.id)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                categoriaId === c.id
+                  ? "bg-primario text-white border-transparent"
+                  : "bg-superficie text-gray-600 border-gray-300 hover:border-gray-400"
+              }`}
+            >
+              {c.icono ? `${c.icono} ` : ""}
+              {c.nombre}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+            <Select
+              valor={orden}
+              onChange={setOrden}
+              ariaLabel="Ordenar por"
+              opciones={[
+                { valor: "recientes", etiqueta: "Más recientes" },
+                { valor: "precioAsc", etiqueta: "Precio: menor a mayor" },
+                { valor: "precioDesc", etiqueta: "Precio: mayor a menor" },
+                { valor: "calificacion", etiqueta: "Mejor valorados" },
+              ]}
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Materia</label>
             <input
@@ -223,6 +293,7 @@ function ClasesContent() {
                   duracionMin={servicio.duracionMin}
                   calificacionPromedio={servicio.calificacionPromedio}
                   totalResenas={servicio.totalResenas}
+                  categoria={servicio.categoria}
                   profesor={servicio.profesor}
                 />
               </FadeIn>

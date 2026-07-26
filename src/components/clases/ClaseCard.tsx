@@ -17,6 +17,7 @@ interface ClaseCardProps {
   duracionMin: number;
   calificacionPromedio?: number | null;
   totalResenas?: number;
+  categoria?: { id: string; nombre: string; icono: string | null } | null;
   profesor: {
     id: string;
     nombre: string;
@@ -42,6 +43,7 @@ export default function ClaseCard({
   duracionMin,
   calificacionPromedio,
   totalResenas,
+  categoria,
   profesor,
 }: ClaseCardProps) {
   return (
@@ -56,6 +58,12 @@ export default function ClaseCard({
             {nivel && (
               <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                 {nivel}
+              </span>
+            )}
+            {categoria && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                {categoria.icono ? `${categoria.icono} ` : ""}
+                {categoria.nombre}
               </span>
             )}
           </div>

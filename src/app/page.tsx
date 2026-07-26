@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import HeroFondo from "@/components/home/HeroFondo";
+import CategoriasDestacadas from "@/components/home/CategoriasDestacadas";
 import TiltCard from "@/components/ui/TiltCard";
 import { FadeIn, AppearOnMount } from "@/components/ui/Motion";
 
@@ -114,6 +115,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Categorías */}
+      <CategoriasDestacadas />
 
       {/* CTA para profesores */}
       <section className="relative overflow-hidden text-white py-20">

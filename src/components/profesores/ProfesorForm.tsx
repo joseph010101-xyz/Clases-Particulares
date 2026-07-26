@@ -5,28 +5,30 @@
 
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 
+interface DatosServicio {
+  materia: string;
+  descripcion: string;
+  precioHora: number;
+  modalidad: string;
+  nivel: string;
+  duracionMin: number;
+  categoriaId?: string;
+}
+
 interface ProfesorFormProps {
-  datosIniciales?: {
-    materia: string;
-    descripcion: string;
-    precioHora: number;
-    modalidad: string;
-    nivel: string;
-    duracionMin: number;
-  };
-  onSubmit: (datos: {
-    materia: string;
-    descripcion: string;
-    precioHora: number;
-    modalidad: string;
-    nivel: string;
-    duracionMin: number;
-  }) => Promise<void>;
+  datosIniciales?: DatosServicio;
+  onSubmit: (datos: DatosServicio) => Promise<void>;
   cargando?: boolean;
+}
+
+interface CategoriaOpcion {
+  id: string;
+  nombre: string;
+  icono: string | null;
 }
 
 export default function ProfesorForm({ datosIniciales, onSubmit, cargando }: ProfesorFormProps) {
@@ -36,10 +38,31 @@ export default function ProfesorForm({ datosIniciales, onSubmit, cargando }: Pro
   const [modalidad, setModalidad] = useState(datosIniciales?.modalidad || "VIRTUAL");
   const [nivel, setNivel] = useState(datosIniciales?.nivel || "");
   const [duracionMin, setDuracionMin] = useState(datosIniciales?.duracionMin || 60);
+  const [categoriaId, setCategoriaId] = useState(datosIniciales?.categoriaId || "");
+  const [categorias, setCategorias] = useState<CategoriaOpcion[]>([]);
+
+  // Categorías disponibles para clasificar el servicio
+  useEffect(() => {
+    fetch("/api/categorias")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.categorias) setCategorias(d.categorias);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await onSubmit({ materia, descripcion, precioHora, modalidad, nivel, duracionMin });
+    await onSubmit({
+      materia,
+      descripcion,
+      precioHora,
+      modalidad,
+      nivel,
+      duracionMin,
+      // Sin categoría se envía undefined para no romper la validación
+      categoriaId: categoriaId || undefined,
+    });
   };
 
   return (
@@ -125,6 +148,28 @@ export default function ProfesorForm({ datosIniciales, onSubmit, cargando }: Pro
           />
         </div>
       </div>
+
+      {categorias.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+          <Select
+            valor={categoriaId}
+            onChange={setCategoriaId}
+            placeholder="Sin categoría"
+            ariaLabel="Categoría"
+            opciones={[
+              { valor: "", etiqueta: "Sin categoría" },
+              ...categorias.map((c) => ({
+                valor: c.id,
+                etiqueta: c.icono ? `${c.icono} ${c.nombre}` : c.nombre,
+              })),
+            ]}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Clasificar tu servicio ayuda a que los estudiantes lo encuentren.
+          </p>
+        </div>
+      )}
 
       <Button type="submit" cargando={cargando} className="w-full">
         {datosIniciales ? "Guardar cambios" : "Crear servicio"}

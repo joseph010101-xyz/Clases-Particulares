@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const precioMin = searchParams.get("precioMin");
     const precioMax = searchParams.get("precioMax");
     const profesorId = searchParams.get("profesorId");
+    const categoriaId = searchParams.get("categoriaId");
+    const orden = searchParams.get("orden"); // recientes | precioAsc | precioDesc | calificacion
     const propios = searchParams.get("propios") === "true";
     const pagina = Math.max(1, parseInt(searchParams.get("pagina") || "1") || 1);
     const limite = Math.min(Math.max(1, parseInt(searchParams.get("limite") || "12") || 12), 50);
@@ -39,6 +41,7 @@ export async function GET(request: NextRequest) {
       ...(incluirInactivos ? {} : { activo: true }),
       ...(incluirInactivos ? {} : { profesor: { activo: true } }),
       ...(profesorId && { profesorId }),
+      ...(categoriaId && { categoriaId }),
       ...(materia && {
         materia: { contains: materia, mode: "insensitive" as const },
       }),
@@ -58,6 +61,24 @@ export async function GET(request: NextRequest) {
         : {}),
     };
 
+    // La calificación media no es una columna: cuando se ordena por ella hay que
+    // traer el conjunto filtrado (con un tope de seguridad) y ordenar en memoria.
+    const ordenarPorCalificacion = orden === "calificacion";
+    const TOPE_ORDEN_MEMORIA = 500;
+
+    const ordenPrisma: Record<string, "asc" | "desc"> =
+      orden === "precioAsc"
+        ? { precioHora: "asc" }
+        : orden === "precioDesc"
+        ? { precioHora: "desc" }
+        : { createdAt: "desc" };
+
+    // Opciones de paginación/orden que se aplican a la consulta
+    const paginado: { skip?: number; take: number; orderBy: Record<string, "asc" | "desc"> } =
+      ordenarPorCalificacion
+        ? { take: TOPE_ORDEN_MEMORIA, orderBy: { createdAt: "desc" } }
+        : { skip: (pagina - 1) * limite, take: limite, orderBy: ordenPrisma };
+
     const [serviciosRaw, total] = await Promise.all([
       prisma.servicio.findMany({
         where,
@@ -69,6 +90,8 @@ export async function GET(request: NextRequest) {
           modalidad: true,
           nivel: true,
           duracionMin: true,
+          categoriaId: true,
+          categoria: { select: { id: true, nombre: true, icono: true } },
           profesor: {
             select: {
               id: true,
@@ -83,15 +106,13 @@ export async function GET(request: NextRequest) {
             select: { resena: { select: { calificacion: true } } },
           },
         },
-        skip: (pagina - 1) * limite,
-        take: limite,
-        orderBy: { createdAt: "desc" },
+        ...paginado,
       }),
       prisma.servicio.count({ where }),
     ]);
 
     // Compute rating stats and strip raw reservas
-    const servicios = serviciosRaw.map(({ reservas, ...s }) => {
+    let servicios = serviciosRaw.map(({ reservas, ...s }) => {
       const calificaciones = reservas
         .map((r) => r.resena?.calificacion)
         .filter((c): c is number => c != null);
@@ -101,6 +122,14 @@ export async function GET(request: NextRequest) {
         totalResenas: calificaciones.length,
       };
     });
+
+    // Orden por calificación: se ordena el conjunto ya calculado (los servicios
+    // sin reseñas quedan al final) y se pagina en memoria.
+    if (ordenarPorCalificacion) {
+      servicios = servicios
+        .sort((a, b) => (b.calificacionPromedio ?? -1) - (a.calificacionPromedio ?? -1))
+        .slice((pagina - 1) * limite, pagina * limite);
+    }
 
     return NextResponse.json({
       servicios,

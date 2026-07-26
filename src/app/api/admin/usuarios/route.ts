@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const rol = searchParams.get("rol");
     const busqueda = searchParams.get("q");
+    const pagina = Math.max(1, parseInt(searchParams.get("pagina") || "1") || 1);
+    const porPagina = Math.min(
+      Math.max(1, parseInt(searchParams.get("porPagina") || "20") || 20),
+      100
+    );
 
     const rolesValidos = ["ESTUDIANTE", "PROFESOR", "MODERADOR", "ADMIN"];
 
@@ -36,23 +41,35 @@ export async function GET(request: NextRequest) {
         : {}),
     };
 
-    const usuarios = await prisma.usuario.findMany({
-      where,
-      select: {
-        id: true,
-        nombre: true,
-        email: true,
-        rol: true,
-        activo: true,
-        verificado: true,
-        ultimoAcceso: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    });
+    const [usuarios, total] = await Promise.all([
+      prisma.usuario.findMany({
+        where,
+        select: {
+          id: true,
+          nombre: true,
+          email: true,
+          rol: true,
+          activo: true,
+          verificado: true,
+          ultimoAcceso: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (pagina - 1) * porPagina,
+        take: porPagina,
+      }),
+      prisma.usuario.count({ where }),
+    ]);
 
-    return NextResponse.json({ usuarios });
+    return NextResponse.json({
+      usuarios,
+      paginacion: {
+        pagina,
+        porPagina,
+        total,
+        totalPaginas: Math.ceil(total / porPagina),
+      },
+    });
   } catch (error) {
     console.error("Error listando usuarios (admin):", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

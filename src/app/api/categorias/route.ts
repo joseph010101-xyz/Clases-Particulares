@@ -9,16 +9,25 @@ import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { categoriaSchema } from "@/lib/validations";
 
-// Listar categorías activas (público)
-export async function GET() {
+// Listar categorías activas (público). Con ?todas=true un administrador
+// obtiene también las desactivadas para poder gestionarlas.
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    let incluirInactivas = false;
+    if (searchParams.get("todas") === "true") {
+      const payload = await obtenerUsuarioActual();
+      incluirInactivas = Boolean(payload && payload.rol === "ADMIN");
+    }
+
     const categorias = await prisma.categoria.findMany({
-      where: { activo: true },
+      where: incluirInactivas ? {} : { activo: true },
       select: {
         id: true,
         nombre: true,
         descripcion: true,
         icono: true,
+        activo: true,
         _count: { select: { servicios: true } },
       },
       orderBy: { nombre: "asc" },

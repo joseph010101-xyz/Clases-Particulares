@@ -16,6 +16,7 @@ import Cargando from "@/components/ui/Cargando";
 import Select from "@/components/ui/Select";
 import PanelResumen from "@/components/admin/PanelResumen";
 import PanelAuditoria from "@/components/admin/PanelAuditoria";
+import PanelCategorias from "@/components/admin/PanelCategorias";
 import FichaUsuario from "@/components/admin/FichaUsuario";
 import { tiempoRelativo } from "@/lib/auditoriaUI";
 import { puedeModerar, puedeAdministrarUsuarios, ROLES_ASIGNABLES, type Rol } from "@/lib/dominio/permisos";
@@ -55,9 +56,12 @@ export default function AdminPage() {
   const [miId, setMiId] = useState<string | null>(null);
   const [miRol, setMiRol] = useState<Rol | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [pestana, setPestana] = useState<"resumen" | "profesores" | "usuarios" | "auditoria">(
-    "resumen"
-  );
+  const [pestana, setPestana] = useState<
+    "resumen" | "profesores" | "usuarios" | "categorias" | "auditoria"
+  >("resumen");
+  // Paginación del listado de usuarios
+  const [paginaUsuarios, setPaginaUsuarios] = useState(1);
+  const [totalPaginasUsuarios, setTotalPaginasUsuarios] = useState(1);
   // Usuario cuya ficha se está consultando
   const [fichaId, setFichaId] = useState<string | null>(null);
 
@@ -77,10 +81,16 @@ export default function AdminPage() {
     if (res.ok) setProfesores((await res.json()).profesores ?? []);
   }, []);
 
-  const cargarUsuarios = useCallback(async (q: string) => {
-    const params = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : "";
-    const res = await fetch(`/api/admin/usuarios${params}`, { cache: "no-store" });
-    if (res.ok) setUsuarios((await res.json()).usuarios ?? []);
+  const cargarUsuarios = useCallback(async (q: string, pagina = 1) => {
+    const params = new URLSearchParams({ pagina: String(pagina), porPagina: "20" });
+    if (q.trim()) params.set("q", q.trim());
+    const res = await fetch(`/api/admin/usuarios?${params.toString()}`, { cache: "no-store" });
+    if (res.ok) {
+      const d = await res.json();
+      setUsuarios(d.usuarios ?? []);
+      setPaginaUsuarios(d.paginacion?.pagina || 1);
+      setTotalPaginasUsuarios(d.paginacion?.totalPaginas || 1);
+    }
   }, []);
 
   useEffect(() => {
@@ -194,6 +204,16 @@ export default function AdminPage() {
             Usuarios y roles
           </button>
         )}
+        {esAdmin && (
+          <button
+            onClick={() => setPestana("categorias")}
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              pestana === "categorias" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Categorías
+          </button>
+        )}
         <button
           onClick={() => setPestana("auditoria")}
           className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
@@ -203,6 +223,9 @@ export default function AdminPage() {
           Auditoría
         </button>
       </div>
+
+      {/* --- Pestaña Categorías (solo ADMIN) --- */}
+      {pestana === "categorias" && esAdmin && <PanelCategorias />}
 
       {/* --- Pestaña Resumen --- */}
       {pestana === "resumen" && <PanelResumen />}
@@ -348,6 +371,30 @@ export default function AdminPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {totalPaginasUsuarios > 1 && (
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <Button
+                variante="ghost"
+                tamano="sm"
+                disabled={paginaUsuarios <= 1}
+                onClick={() => cargarUsuarios(busqueda, paginaUsuarios - 1)}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-gray-500">
+                {paginaUsuarios} de {totalPaginasUsuarios}
+              </span>
+              <Button
+                variante="ghost"
+                tamano="sm"
+                disabled={paginaUsuarios >= totalPaginasUsuarios}
+                onClick={() => cargarUsuarios(busqueda, paginaUsuarios + 1)}
+              >
+                Siguiente
+              </Button>
             </div>
           )}
         </>

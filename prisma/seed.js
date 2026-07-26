@@ -13,12 +13,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Iniciando seed de la base de datos...");
 
-  // Limpiar datos existentes (en orden por dependencias)
+  // Limpiar datos existentes (en orden por dependencias).
+  // Al borrar los usuarios se eliminan en cascada cursos, inscripciones,
+  // materiales, tareas, entregas, mensajes y notificaciones.
   await prisma.resena.deleteMany();
   await prisma.reserva.deleteMany();
   await prisma.disponibilidad.deleteMany();
   await prisma.servicio.deleteMany();
   await prisma.usuario.deleteMany();
+  await prisma.categoria.deleteMany();
+  // La auditoría no tiene relaciones: se limpia aparte
+  await prisma.registroAuditoria.deleteMany();
 
   // Crear contraseña hasheada para los usuarios de prueba
   const passwordHash = await bcrypt.hash("123456", 10);
@@ -80,10 +85,38 @@ async function main() {
     },
   });
 
+  // ---- Crear administrador ----
+  // El registro público no permite crear cuentas ADMIN; el seed sí, para poder
+  // probar el panel de administración desde el primer momento.
+  await prisma.usuario.create({
+    data: {
+      nombre: "Admin ClasesYa",
+      email: "admin@ejemplo.com",
+      password: passwordHash,
+      rol: "ADMIN",
+      ubicacion: "Madrid",
+    },
+  });
+
+  // ---- Crear categorías ----
+  const categorias = {};
+  for (const cat of [
+    { nombre: "Matemáticas", icono: "📐", descripcion: "Cálculo, álgebra, estadística y geometría" },
+    { nombre: "Programación", icono: "💻", descripcion: "Lenguajes, desarrollo web y algoritmos" },
+    { nombre: "Idiomas", icono: "🗣️", descripcion: "Inglés, francés, alemán y más" },
+    { nombre: "Ciencias", icono: "🔬", descripcion: "Física, química y biología" },
+    { nombre: "Música", icono: "🎵", descripcion: "Instrumentos, teoría musical y canto" },
+    { nombre: "Arte y diseño", icono: "🎨", descripcion: "Dibujo, pintura y diseño digital" },
+  ]) {
+    const creada = await prisma.categoria.create({ data: cat });
+    categorias[cat.nombre] = creada.id;
+  }
+
   // ---- Crear servicios ----
   const servicio1 = await prisma.servicio.create({
     data: {
       profesorId: profesor1.id,
+      categoriaId: categorias["Matemáticas"],
       materia: "Matemáticas",
       descripcion: "Clases de matemáticas para todos los niveles. Cálculo, álgebra, estadística y geometría. Metodología práctica con ejercicios resueltos.",
       precioHora: 25.00,
@@ -96,6 +129,7 @@ async function main() {
   const servicio2 = await prisma.servicio.create({
     data: {
       profesorId: profesor2.id,
+      categoriaId: categorias["Programación"],
       materia: "Programación en Python",
       descripcion: "Aprende Python desde cero hasta nivel avanzado. Cubro fundamentos, POO, estructuras de datos y proyectos reales.",
       precioHora: 30.00,
@@ -108,6 +142,7 @@ async function main() {
   await prisma.servicio.create({
     data: {
       profesorId: profesor2.id,
+      categoriaId: categorias["Programación"],
       materia: "JavaScript y React",
       descripcion: "Desarrollo web frontend con JavaScript moderno y React. Incluye Next.js, TypeScript y proyectos prácticos.",
       precioHora: 35.00,
@@ -120,6 +155,7 @@ async function main() {
   const servicio4 = await prisma.servicio.create({
     data: {
       profesorId: profesor3.id,
+      categoriaId: categorias["Idiomas"],
       materia: "Inglés",
       descripcion: "Clases de inglés personalizadas. Conversación, gramática y preparación de exámenes Cambridge (B1, B2, C1).",
       precioHora: 20.00,

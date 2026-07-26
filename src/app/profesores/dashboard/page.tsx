@@ -24,6 +24,7 @@ interface Servicio {
   nivel: string;
   duracionMin: number;
   activo: boolean;
+  categoriaId?: string | null;
 }
 
 interface Reserva {
@@ -147,7 +148,7 @@ export default function ProfesorDashboardPage() {
     fetchDatos();
   }, [fetchDatos]);
 
-  const handleCrearServicio = async (datos: { materia: string; descripcion: string; precioHora: number; modalidad: string; nivel: string; duracionMin: number }) => {
+  const handleCrearServicio = async (datos: { materia: string; descripcion: string; precioHora: number; modalidad: string; nivel: string; duracionMin: number; categoriaId?: string }) => {
     const res = await fetch("/api/clases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,7 +161,7 @@ export default function ProfesorDashboardPage() {
     }
   };
 
-  const handleEditarServicio = async (datos: { materia: string; descripcion: string; precioHora: number; modalidad: string; nivel: string; duracionMin: number }) => {
+  const handleEditarServicio = async (datos: { materia: string; descripcion: string; precioHora: number; modalidad: string; nivel: string; duracionMin: number; categoriaId?: string }) => {
     if (!servicioEditando) return;
 
     const res = await fetch(`/api/clases/${servicioEditando.id}`, {
@@ -413,7 +414,11 @@ export default function ProfesorDashboardPage() {
             {servicioEditando && (
               <ProfesorForm
                 onSubmit={handleEditarServicio}
-                datosIniciales={{ ...servicioEditando, descripcion: servicioEditando.descripcion || "" }}
+                datosIniciales={{
+                  ...servicioEditando,
+                  descripcion: servicioEditando.descripcion || "",
+                  categoriaId: servicioEditando.categoriaId || undefined,
+                }}
               />
             )}
           </Modal>
