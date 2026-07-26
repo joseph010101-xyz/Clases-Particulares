@@ -191,11 +191,20 @@ async function main() {
   }
 
   // ---- Crear reservas ----
+  // Fechas relativas a hoy: la completada ya ocurrió y las demás están por
+  // venir, de modo que los paneles muestren actividad reciente.
+  const enDias = (n) => {
+    const d = new Date();
+    d.setDate(d.getDate() + n);
+    d.setHours(12, 0, 0, 0);
+    return d;
+  };
+
   const reserva1 = await prisma.reserva.create({
     data: {
       servicioId: servicio1.id,
       estudianteId: estudiante1.id,
-      fecha: new Date("2026-04-05"),
+      fecha: enDias(-5),
       horaInicio: "10:00",
       horaFin: "11:00",
       estado: "COMPLETADA",
@@ -207,7 +216,7 @@ async function main() {
     data: {
       servicioId: servicio2.id,
       estudianteId: estudiante2.id,
-      fecha: new Date("2026-04-07"),
+      fecha: enDias(2),
       horaInicio: "16:00",
       horaFin: "17:30",
       estado: "CONFIRMADA",
@@ -218,7 +227,7 @@ async function main() {
     data: {
       servicioId: servicio4.id,
       estudianteId: estudiante1.id,
-      fecha: new Date("2026-04-10"),
+      fecha: enDias(4),
       horaInicio: "11:00",
       horaFin: "12:00",
       estado: "PENDIENTE",
