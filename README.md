@@ -16,11 +16,30 @@ npx prisma db seed        # datos de prueba (usuarios con password 123456)
 npm run dev               # http://localhost:3000
 ```
 
-Con Docker (Next.js + PostgreSQL):
+## Con Docker (recomendado para reproducir producción)
+
+Levanta la aplicación y PostgreSQL en dos contenedores:
 
 ```bash
-docker compose up --build
+docker compose up --build -d     # construir y arrancar en segundo plano
+docker compose ps                # estado de los contenedores
+docker compose logs -f nextjs    # ver los registros de la aplicación
+docker compose down              # detener (los datos persisten en el volumen)
 ```
+
+La aplicación queda en <http://localhost:3000>. El esquema se sincroniza solo al
+arrancar (`entrypoint.sh` ejecuta `prisma db push`).
+
+PostgreSQL se publica en **`localhost:5433`** y solo para la máquina local (se usa
+el 5433 porque el 5432 suele estar ocupado por una instalación de PostgreSQL en
+Windows). Para cargar los datos de prueba en esa base:
+
+```bash
+# Ajusta usuario/contraseña/base a los valores de tu .env
+DATABASE_URL="postgresql://usuario:password@localhost:5433/clasesya" npx prisma db seed
+```
+
+Ese puerto también sirve para conectarse con cualquier cliente de base de datos.
 
 ## Pruebas
 

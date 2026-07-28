@@ -18,6 +18,13 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=production
+      # Zona horaria: mantiene coherente el día calendario de las reservas
+      - TZ=${TZ:-America/La_Paz}
+      # Almacenamiento de archivos del aula virtual (opcional: si faltan, la
+      # subida devuelve un aviso claro y el resto de la app funciona igual)
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,6 +36,12 @@ services:
     image: postgres:15-alpine
     container_name: clasesya-postgres
     restart: unless-stopped
+    # Puerto publicado solo en la máquina local (127.0.0.1), para poder ejecutar
+    # el seed y conectarse con un cliente de base de datos durante el desarrollo.
+    # Se usa el 5433 en el host porque el 5432 suele estar ocupado por una
+    # instalación de PostgreSQL en Windows.
+    ports:
+      - "127.0.0.1:5433:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

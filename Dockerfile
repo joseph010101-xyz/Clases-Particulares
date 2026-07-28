@@ -3,15 +3,10 @@
 # Multi-stage build para optimizar el tamaño de la imagen
 # =============================================
 
-# --- Etapa 1: Instalar dependencias ---
-FROM node:20-alpine AS deps
-WORKDIR /app
-
-# Copiar archivos de dependencias
-COPY package.json package-lock.json ./
-RUN npm ci --only=production
-
-# --- Etapa 2: Build de la aplicación ---
+# --- Etapa 1: Build de la aplicación ---
+# Se instalan todas las dependencias (incluidas las de desarrollo) porque el
+# build de Next.js necesita TypeScript y Tailwind. La imagen final solo se queda
+# con la salida standalone, así que nada de esto llega a producción.
 FROM node:20-alpine AS builder
 WORKDIR /app
 
@@ -27,7 +22,7 @@ RUN npx prisma generate
 # Build de Next.js
 RUN npm run build
 
-# --- Etapa 3: Imagen de producción ---
+# --- Etapa 2: Imagen de producción ---
 FROM node:20-alpine AS runner
 WORKDIR /app
 
