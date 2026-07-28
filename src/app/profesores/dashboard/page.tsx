@@ -15,6 +15,7 @@ import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
+import { formatearPrecioHora } from "@/lib/dominio/moneda";
 
 interface Servicio {
   id: string;
@@ -380,7 +381,7 @@ export default function ProfesorDashboardPage() {
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-blue-600">€{servicio.precioHora}/h</p>
+                      <p className="text-lg font-bold text-blue-600">{formatearPrecioHora(servicio.precioHora)}</p>
                       {!servicio.activo && (
                         <span className="text-xs text-red-500">Inactivo</span>
                       )}

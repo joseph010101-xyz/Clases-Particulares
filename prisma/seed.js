@@ -36,8 +36,8 @@ async function main() {
       password: passwordHash,
       rol: "PROFESOR",
       bio: "Profesora de matemáticas con 10 años de experiencia. Especializada en cálculo y álgebra universitaria.",
-      ubicacion: "Madrid",
-      telefono: "+34 612 345 678",
+      ubicacion: "La Paz",
+      telefono: "+591 71234567",
     },
   });
 
@@ -48,8 +48,8 @@ async function main() {
       password: passwordHash,
       rol: "PROFESOR",
       bio: "Ingeniero de software y profesor de programación. Enseño Python, JavaScript y desarrollo web.",
-      ubicacion: "Barcelona",
-      telefono: "+34 623 456 789",
+      ubicacion: "Santa Cruz de la Sierra",
+      telefono: "+591 72345678",
     },
   });
 
@@ -60,7 +60,7 @@ async function main() {
       password: passwordHash,
       rol: "PROFESOR",
       bio: "Licenciada en Filología Inglesa. Preparo para exámenes Cambridge y TOEFL.",
-      ubicacion: "Valencia",
+      ubicacion: "Cochabamba",
     },
   });
 
@@ -71,7 +71,7 @@ async function main() {
       email: "pedro@ejemplo.com",
       password: passwordHash,
       rol: "ESTUDIANTE",
-      ubicacion: "Madrid",
+      ubicacion: "La Paz",
     },
   });
 
@@ -81,7 +81,7 @@ async function main() {
       email: "laura@ejemplo.com",
       password: passwordHash,
       rol: "ESTUDIANTE",
-      ubicacion: "Barcelona",
+      ubicacion: "Santa Cruz de la Sierra",
     },
   });
 
@@ -94,7 +94,7 @@ async function main() {
       email: "admin@ejemplo.com",
       password: passwordHash,
       rol: "ADMIN",
-      ubicacion: "Madrid",
+      ubicacion: "La Paz",
     },
   });
 
@@ -119,7 +119,7 @@ async function main() {
       categoriaId: categorias["Matemáticas"],
       materia: "Matemáticas",
       descripcion: "Clases de matemáticas para todos los niveles. Cálculo, álgebra, estadística y geometría. Metodología práctica con ejercicios resueltos.",
-      precioHora: 25.00,
+      precioHora: 60.00,
       modalidad: "AMBOS",
       nivel: "Universitario",
       duracionMin: 60,
@@ -132,7 +132,7 @@ async function main() {
       categoriaId: categorias["Programación"],
       materia: "Programación en Python",
       descripcion: "Aprende Python desde cero hasta nivel avanzado. Cubro fundamentos, POO, estructuras de datos y proyectos reales.",
-      precioHora: 30.00,
+      precioHora: 80.00,
       modalidad: "VIRTUAL",
       nivel: "Todos los niveles",
       duracionMin: 90,
@@ -145,7 +145,7 @@ async function main() {
       categoriaId: categorias["Programación"],
       materia: "JavaScript y React",
       descripcion: "Desarrollo web frontend con JavaScript moderno y React. Incluye Next.js, TypeScript y proyectos prácticos.",
-      precioHora: 35.00,
+      precioHora: 90.00,
       modalidad: "VIRTUAL",
       nivel: "Intermedio",
       duracionMin: 60,
@@ -158,7 +158,7 @@ async function main() {
       categoriaId: categorias["Idiomas"],
       materia: "Inglés",
       descripcion: "Clases de inglés personalizadas. Conversación, gramática y preparación de exámenes Cambridge (B1, B2, C1).",
-      precioHora: 20.00,
+      precioHora: 50.00,
       modalidad: "AMBOS",
       nivel: "Todos los niveles",
       duracionMin: 60,

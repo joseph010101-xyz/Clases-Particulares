@@ -6,6 +6,7 @@
 import Link from "next/link";
 import Card, { CardBody, CardFooter } from "@/components/ui/Card";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
+import { formatearPrecio } from "@/lib/dominio/moneda";
 
 interface ClaseCardProps {
   id: string;
@@ -105,7 +106,7 @@ export default function ClaseCard({
 
         <CardFooter className="flex items-center justify-between">
           <div>
-            <span className="text-lg font-bold text-blue-600">€{Number(precioHora)}</span>
+            <span className="text-lg font-bold text-blue-600">{formatearPrecio(precioHora)}</span>
             <span className="text-sm text-gray-500">/hora</span>
           </div>
           <span className="text-xs text-gray-500">{duracionMin} min</span>

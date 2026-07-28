@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import StarRating from "@/components/ui/StarRating";
 import ReservaForm from "@/components/reservas/ReservaForm";
 import Modal from "@/components/ui/Modal";
+import { formatearPrecio, formatearPrecioHora } from "@/lib/dominio/moneda";
 
 interface Resena {
   calificacion: number;
@@ -165,7 +166,7 @@ export default function ClaseDetallePage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-bold text-blue-600">€{servicio.precioHora}</p>
+                <p className="text-3xl font-bold text-blue-600">{formatearPrecio(servicio.precioHora)}</p>
                 <p className="text-sm text-gray-500">por hora</p>
               </div>
             </div>
@@ -251,7 +252,7 @@ export default function ClaseDetallePage() {
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sticky top-24">
             <h3 className="font-semibold text-gray-900 mb-2">Reservar esta clase</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Duración: {servicio.duracionMin} minutos · €{servicio.precioHora}/hora
+              Duración: {servicio.duracionMin} minutos · {formatearPrecioHora(servicio.precioHora, "/hora")}
             </p>
 
             {!usuario ? (

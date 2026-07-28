@@ -7,6 +7,7 @@
 
 import Card, { CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import { formatearPrecioHora } from "@/lib/dominio/moneda";
 
 interface ReservaCardProps {
   id: string;
@@ -86,7 +87,7 @@ export default function ReservaCard({
                 </svg>
                 {horaInicio} - {horaFin}
               </span>
-              <span>€{Number(precioHora)}/h · {modalidad.charAt(0) + modalidad.slice(1).toLowerCase()}</span>
+              <span>{formatearPrecioHora(precioHora)} · {modalidad.charAt(0) + modalidad.slice(1).toLowerCase()}</span>
             </div>
 
             {notas && (

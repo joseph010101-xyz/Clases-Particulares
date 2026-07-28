@@ -6,6 +6,7 @@
 import Link from "next/link";
 import Card, { CardBody } from "@/components/ui/Card";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
+import { formatearPrecioHora } from "@/lib/dominio/moneda";
 
 interface ProfesorCardProps {
   id: string;
@@ -91,7 +92,7 @@ export default function ProfesorCard({ id, nombre, foto, bio, ubicacion, verific
               {/* Precio */}
               {precioMinimo !== null && (
                 <p className="text-sm font-medium text-gray-900 mt-2">
-                  Desde <span className="text-blue-600">€{precioMinimo}/h</span>
+                  Desde <span className="text-blue-600">{formatearPrecioHora(precioMinimo)}</span>
                 </p>
               )}
             </div>

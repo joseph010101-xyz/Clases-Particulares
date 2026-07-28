@@ -10,6 +10,7 @@ import ClaseCard from "@/components/clases/ClaseCard";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import { FadeIn } from "@/components/ui/Motion";
+import { SIMBOLO_MONEDA } from "@/lib/dominio/moneda";
 
 interface Servicio {
   id: string;
@@ -236,23 +237,27 @@ function ClasesContent() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio mín.</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Precio mín. ({SIMBOLO_MONEDA})
+            </label>
             <input
               type="number"
               value={precioMin}
               onChange={(e) => setPrecioMin(e.target.value)}
-              placeholder="€0"
+              placeholder="0"
               min="0"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Precio máx.</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Precio máx. ({SIMBOLO_MONEDA})
+            </label>
             <input
               type="number"
               value={precioMax}
               onChange={(e) => setPrecioMax(e.target.value)}
-              placeholder="$∞"
+              placeholder="Sin límite"
               min="0"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />

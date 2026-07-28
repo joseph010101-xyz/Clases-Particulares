@@ -7,7 +7,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
-import { generarCSV } from "@/lib/dominio";
+import { generarCSV, SIMBOLO_MONEDA } from "@/lib/dominio";
 
 export async function GET() {
   try {
@@ -53,7 +53,7 @@ export async function GET() {
       esEstudiante ? "Profesor" : "Estudiante",
       ...(esEstudiante ? [] : ["Email estudiante"]),
       "Estado",
-      "Precio/hora",
+      `Precio/hora (${SIMBOLO_MONEDA})`,
       "Calificación",
       "Notas",
       "Solicitada el",

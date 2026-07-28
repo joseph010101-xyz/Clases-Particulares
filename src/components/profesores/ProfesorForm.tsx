@@ -8,6 +8,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
+import { SIMBOLO_MONEDA } from "@/lib/dominio/moneda";
 
 interface DatosServicio {
   materia: string;
@@ -93,7 +94,9 @@ export default function ProfesorForm({ datosIniciales, onSubmit, cargando }: Pro
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Precio por hora (€) *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Precio por hora ({SIMBOLO_MONEDA}) *
+          </label>
           <input
             type="number"
             value={precioHora}
