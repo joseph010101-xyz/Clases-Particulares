@@ -31,11 +31,16 @@ export function cloudinaryDisponible(): boolean {
   );
 }
 
+// Cloudinary clasifica lo que sube en image, video o raw (documentos). Hay que
+// guardar ese valor: la API de borrado exige el tipo exacto y no acepta "auto".
+export type TipoRecurso = "image" | "video" | "raw";
+
 export interface ArchivoSubido {
   url: string;
   publicId: string;
   formato?: string;
   bytes?: number;
+  tipoRecurso: TipoRecurso;
 }
 
 // Sube un archivo (Buffer) a Cloudinary. resource_type "auto" acepta documentos,
@@ -66,6 +71,7 @@ export async function subirArchivo(
             publicId: result.public_id,
             formato: result.format,
             bytes: result.bytes,
+            tipoRecurso: (result.resource_type as TipoRecurso) ?? "raw",
           });
         }
       )
@@ -73,8 +79,18 @@ export async function subirArchivo(
   });
 }
 
-// Elimina un archivo de Cloudinary por su public_id.
-export async function eliminarArchivo(publicId: string): Promise<void> {
+/**
+ * Elimina un archivo de Cloudinary. Requiere el tipo de recurso con el que se
+ * subió: usar "auto" aquí haría que los documentos (raw) nunca se borraran y se
+ * acumularan consumiendo la cuota.
+ */
+export async function eliminarArchivo(
+  publicId: string,
+  tipoRecurso: TipoRecurso = "raw"
+): Promise<void> {
   configurar();
-  await cloudinary.uploader.destroy(publicId, { resource_type: "auto", invalidate: true });
+  await cloudinary.uploader.destroy(publicId, {
+    resource_type: tipoRecurso,
+    invalidate: true,
+  });
 }

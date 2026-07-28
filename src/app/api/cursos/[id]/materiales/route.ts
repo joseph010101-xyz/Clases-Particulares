@@ -9,11 +9,13 @@ import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { materialSchema } from "@/lib/validations";
 import { subirArchivo, cloudinaryDisponible } from "@/lib/cloudinary";
+import {
+  MAX_BYTES_ARCHIVO,
+  esArchivoPermitido,
+  descripcionFormatosPermitidos,
+} from "@/lib/dominio";
 
 export const runtime = "nodejs";
-
-// Límite de tamaño por archivo (15 MB) para no agotar la memoria del servidor.
-const MAX_BYTES = 15 * 1024 * 1024;
 
 export async function POST(
   request: NextRequest,
@@ -56,10 +58,17 @@ export async function POST(
     if (!(archivo instanceof File) || archivo.size === 0) {
       return NextResponse.json({ error: "Debes adjuntar un archivo" }, { status: 400 });
     }
-    if (archivo.size > MAX_BYTES) {
+    if (archivo.size > MAX_BYTES_ARCHIVO) {
       return NextResponse.json(
         { error: "El archivo supera el límite de 15 MB" },
         { status: 413 }
+      );
+    }
+    // Lista blanca de formatos: evita que se suban ejecutables o scripts
+    if (!esArchivoPermitido(archivo.name)) {
+      return NextResponse.json(
+        { error: `Formato no permitido. Se admiten: ${descripcionFormatosPermitidos()}.` },
+        { status: 400 }
       );
     }
 
@@ -72,6 +81,7 @@ export async function POST(
         titulo: resultado.data.titulo,
         url: subido.url,
         publicId: subido.publicId,
+        tipoRecurso: subido.tipoRecurso,
         formato: subido.formato,
         bytes: subido.bytes,
       },

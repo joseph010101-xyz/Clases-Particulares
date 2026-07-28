@@ -8,3 +8,4 @@ export * from "./calificaciones";
 export * from "./reservas";
 export * from "./csv";
 export * from "./moneda";
+export * from "./archivos";

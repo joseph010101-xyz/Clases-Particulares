@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
+import { cloudinaryDisponible } from "@/lib/cloudinary";
 
 export async function GET(
   _request: NextRequest,
@@ -67,6 +68,8 @@ export async function GET(
       estaInscrito,
       puedeVerMaterial: puedeVerMaterial({ esDueño, estaInscrito }),
       materiales,
+      // Permite avisar en la interfaz antes de intentar una subida
+      almacenamientoConfigurado: cloudinaryDisponible(),
     });
   } catch (error) {
     console.error("Error obteniendo curso:", error);

@@ -7,11 +7,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
-import { subirArchivo, eliminarArchivo, cloudinaryDisponible } from "@/lib/cloudinary";
+import { subirArchivo, eliminarArchivo, cloudinaryDisponible, type TipoRecurso } from "@/lib/cloudinary";
+import {
+  MAX_BYTES_ARCHIVO,
+  esArchivoPermitido,
+  descripcionFormatosPermitidos,
+} from "@/lib/dominio";
 
 export const runtime = "nodejs";
-
-const MAX_BYTES = 15 * 1024 * 1024;
 
 export async function POST(
   request: NextRequest,
@@ -54,11 +57,23 @@ export async function POST(
     }
 
     // Subir archivo nuevo (si lo hay)
-    let datosArchivo: { url: string; publicId: string; formato?: string; bytes?: number } | null = null;
+    let datosArchivo: {
+      url: string;
+      publicId: string;
+      tipoRecurso: TipoRecurso;
+      formato?: string;
+      bytes?: number;
+    } | null = null;
     if (hayArchivo) {
       const file = archivo as File;
-      if (file.size > MAX_BYTES) {
+      if (file.size > MAX_BYTES_ARCHIVO) {
         return NextResponse.json({ error: "El archivo supera el límite de 15 MB" }, { status: 413 });
+      }
+      if (!esArchivoPermitido(file.name)) {
+        return NextResponse.json(
+          { error: `Formato no permitido. Se admiten: ${descripcionFormatosPermitidos()}.` },
+          { status: 400 }
+        );
       }
       if (!cloudinaryDisponible()) {
         return NextResponse.json(
@@ -74,7 +89,7 @@ export async function POST(
     // Entrega previa (para reemplazar el archivo si corresponde)
     const previa = await prisma.entrega.findUnique({
       where: { tareaId_estudianteId: { tareaId: id, estudianteId: payload.userId } },
-      select: { id: true, publicId: true },
+      select: { id: true, publicId: true, tipoRecurso: true },
     });
 
     // Al reenviar, la calificación previa se limpia (vuelve a estado por revisar).
@@ -86,6 +101,7 @@ export async function POST(
         comentario,
         url: datosArchivo?.url ?? null,
         publicId: datosArchivo?.publicId ?? null,
+        tipoRecurso: datosArchivo?.tipoRecurso ?? null,
         formato: datosArchivo?.formato ?? null,
         bytes: datosArchivo?.bytes ?? null,
       },
@@ -95,6 +111,7 @@ export async function POST(
           ? {
               url: datosArchivo.url,
               publicId: datosArchivo.publicId,
+              tipoRecurso: datosArchivo.tipoRecurso,
               formato: datosArchivo.formato,
               bytes: datosArchivo.bytes,
             }
@@ -108,7 +125,7 @@ export async function POST(
     // Borrar el archivo anterior en Cloudinary si fue reemplazado
     if (datosArchivo && previa?.publicId && cloudinaryDisponible()) {
       try {
-        await eliminarArchivo(previa.publicId);
+        await eliminarArchivo(previa.publicId, (previa.tipoRecurso as TipoRecurso) ?? "raw");
       } catch (e) {
         console.error("No se pudo borrar el archivo anterior:", e);
       }

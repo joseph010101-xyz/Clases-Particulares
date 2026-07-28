@@ -24,7 +24,12 @@ export async function DELETE(
 
     const material = await prisma.material.findFirst({
       where: { id: materialId, cursoId: id },
-      select: { id: true, publicId: true, curso: { select: { profesorId: true } } },
+      select: {
+        id: true,
+        publicId: true,
+        tipoRecurso: true,
+        curso: { select: { profesorId: true } },
+      },
     });
     if (!material) {
       return NextResponse.json({ error: "Material no encontrado" }, { status: 404 });
@@ -36,7 +41,7 @@ export async function DELETE(
     // Borrar primero en Cloudinary (si está configurado) y luego en la BD.
     if (cloudinaryDisponible()) {
       try {
-        await eliminarArchivo(material.publicId);
+        await eliminarArchivo(material.publicId, material.tipoRecurso as "image" | "video" | "raw");
       } catch (e) {
         console.error("No se pudo borrar el archivo en Cloudinary:", e);
       }

@@ -330,6 +330,7 @@ model Entrega {
   comentario        String?   @db.Text
   url               String?                          // archivo entregado (Cloudinary)
   publicId          String?   @map("public_id")
+  tipoRecurso       String?   @map("tipo_recurso")   // image/video/raw (para el borrado)
   formato           String?
   bytes             Int?
   calificacion      Int?                             // nota 0..100 (la pone el profesor)
@@ -354,6 +355,9 @@ model Material {
   titulo    String
   url       String                        // URL de descarga (Cloudinary secure_url)
   publicId  String   @map("public_id")    // Identificador en Cloudinary (para borrado)
+  // Tipo con el que Cloudinary lo almacenó (image/video/raw). Es imprescindible
+  // para poder eliminarlo después: la API de borrado no acepta "auto".
+  tipoRecurso String @default("raw") @map("tipo_recurso")
   formato   String?                        // pdf, xlsx, mp4, ...
   bytes     Int?                           // tamaño del archivo
   createdAt DateTime @default(now()) @map("created_at")

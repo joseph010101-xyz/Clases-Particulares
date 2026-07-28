@@ -14,6 +14,7 @@ import Cargando from "@/components/ui/Cargando";
 import SelectorFecha from "@/components/ui/SelectorFecha";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
+import { formatearTamano, descripcionFormatosPermitidos } from "@/lib/dominio";
 
 interface Material {
   id: string;
@@ -47,6 +48,7 @@ interface CursoDetalle {
   estaInscrito: boolean;
   puedeVerMaterial: boolean;
   materiales: Material[];
+  almacenamientoConfigurado?: boolean;
 }
 
 interface Usuario {
@@ -54,11 +56,8 @@ interface Usuario {
   rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN" | "MODERADOR";
 }
 
-function formatearBytes(n: number | null): string {
-  if (!n) return "";
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
-  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
-}
+// El formato de tamaño vive en la capa de dominio (compartido y con pruebas)
+const formatearBytes = formatearTamano;
 
 export default function CursoDetallePage() {
   const params = useParams();
@@ -274,6 +273,13 @@ export default function CursoDetallePage() {
       {esDueño && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
           <h2 className="font-semibold text-gray-900 mb-3">Subir material</h2>
+          {data.almacenamientoConfigurado === false && (
+            <div className="mb-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-4 py-3 text-sm">
+              El almacenamiento de archivos aún no está configurado, así que la subida no
+              funcionará. El resto del curso (tareas, entregas por comentario e inscripciones)
+              sigue disponible con normalidad.
+            </div>
+          )}
           <form onSubmit={subirMaterial} className="space-y-3">
             {errorSubida && <div className="bg-red-50 text-red-700 px-4 py-2 rounded-lg text-sm">{errorSubida}</div>}
             <input
@@ -290,7 +296,9 @@ export default function CursoDetallePage() {
               onChange={(e) => setArchivo(e.target.files?.[0] ?? null)}
               className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
             />
-            <p className="text-xs text-gray-400">PDF, Word, Excel, imágenes o video. Máximo 15 MB por archivo.</p>
+            <p className="text-xs text-gray-400">
+              {descripcionFormatosPermitidos()}. Máximo 15 MB por archivo.
+            </p>
             <Button type="submit" cargando={subiendo}>Subir</Button>
           </form>
         </div>
