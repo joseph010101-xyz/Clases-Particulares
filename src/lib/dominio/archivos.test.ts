@@ -2,9 +2,27 @@ import { describe, it, expect } from "vitest";
 import {
   extensionDe,
   esArchivoPermitido,
+  esImagenPermitida,
   formatearTamano,
   MAX_BYTES_ARCHIVO,
 } from "./archivos";
+
+describe("esImagenPermitida", () => {
+  it("acepta los formatos de imagen habituales", () => {
+    expect(esImagenPermitida("perfil.jpg")).toBe(true);
+    expect(esImagenPermitida("foto.PNG")).toBe(true);
+    expect(esImagenPermitida("avatar.webp")).toBe(true);
+  });
+
+  it("rechaza documentos y ejecutables", () => {
+    expect(esImagenPermitida("apuntes.pdf")).toBe(false);
+    expect(esImagenPermitida("virus.exe")).toBe(false);
+  });
+
+  it("rechaza SVG por poder contener scripts", () => {
+    expect(esImagenPermitida("logo.svg")).toBe(false);
+  });
+});
 
 describe("extensionDe", () => {
   it("extrae la extensión en minúsculas", () => {

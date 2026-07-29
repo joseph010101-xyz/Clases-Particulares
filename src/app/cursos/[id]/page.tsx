@@ -14,7 +14,15 @@ import Cargando from "@/components/ui/Cargando";
 import SelectorFecha from "@/components/ui/SelectorFecha";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
-import { formatearTamano, descripcionFormatosPermitidos } from "@/lib/dominio";
+import Avatar from "@/components/ui/Avatar";
+import {
+  formatearTamano,
+  descripcionFormatosPermitidos,
+  esCursoGratuito,
+  formatearPrecio,
+  describirVigencia,
+  cursoFinalizado,
+} from "@/lib/dominio";
 
 interface Material {
   id: string;
@@ -39,6 +47,9 @@ interface CursoDetalle {
     id: string;
     titulo: string;
     descripcion: string;
+    precio?: number | string;
+    fechaInicio?: string | null;
+    fechaFin?: string | null;
     activo: boolean;
     createdAt: string;
     profesor: { id: string; nombre: string; foto: string | null; verificado?: boolean };
@@ -233,6 +244,11 @@ export default function CursoDetallePage() {
 
   const { curso, esDueño, estaInscrito, puedeVerMaterial, materiales } = data;
   const esEstudiante = usuario?.rol === "ESTUDIANTE";
+  const finalizado = cursoFinalizado({
+    activo: curso.activo,
+    fechaInicio: curso.fechaInicio,
+    fechaFin: curso.fechaFin,
+  });
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -241,11 +257,24 @@ export default function CursoDetallePage() {
       <div className="bg-white border border-gray-200 rounded-xl p-6 mt-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-gray-900">{curso.titulo}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900">{curso.titulo}</h1>
+              <span
+                className={`text-sm font-semibold rounded-full px-2.5 py-0.5 ${
+                  esCursoGratuito(curso.precio) ? "bg-green-50 text-green-700" : "bg-blue-50 text-blue-700"
+                }`}
+              >
+                {esCursoGratuito(curso.precio) ? "Gratis" : formatearPrecio(curso.precio)}
+              </span>
+            </div>
             <Link href={`/profesores/${curso.profesor.id}`} className="inline-flex items-center gap-1.5 mt-2 text-gray-600 hover:text-blue-600">
+              <Avatar nombre={curso.profesor.nombre} foto={curso.profesor.foto} tamano={24} />
               {curso.profesor.nombre}
               {curso.profesor.verificado && <BadgeVerificado soloIcono />}
             </Link>
+            <p className="text-sm text-gray-500 mt-2">
+              📅 {describirVigencia({ activo: curso.activo, fechaInicio: curso.fechaInicio, fechaFin: curso.fechaFin })}
+            </p>
             <p className="text-xs text-gray-400 mt-1">
               {curso._count.inscripciones} inscrito{curso._count.inscripciones !== 1 ? "s" : ""} ·{" "}
               {curso._count.materiales} material{curso._count.materiales !== 1 ? "es" : ""}
@@ -258,8 +287,12 @@ export default function CursoDetallePage() {
               <span className="text-sm font-medium text-blue-600">Tu curso</span>
             ) : estaInscrito ? (
               <Button variante="secondary" cargando={accion} onClick={darseDeBaja}>Darse de baja</Button>
+            ) : finalizado ? (
+              <span className="text-sm font-medium text-gray-500">Curso finalizado</span>
             ) : esEstudiante ? (
-              <Button cargando={accion} onClick={inscribirse}>Inscribirme</Button>
+              <Button cargando={accion} onClick={inscribirse}>
+                {esCursoGratuito(curso.precio) ? "Inscribirme gratis" : `Inscribirme · ${formatearPrecio(curso.precio)}`}
+              </Button>
             ) : !usuario ? (
               <Link href="/login"><Button>Inicia sesión para inscribirte</Button></Link>
             ) : null}

@@ -75,6 +75,8 @@ model Usuario {
   password  String
   rol       Rol
   foto      String?
+  // Identificador en Cloudinary de la foto, para poder reemplazarla o borrarla
+  fotoPublicId String? @map("foto_public_id")
   telefono  String?
   bio       String?  @db.Text
   ubicacion String?
@@ -273,6 +275,11 @@ model Curso {
   profesorId  String   @map("profesor_id")
   titulo      String
   descripcion String   @db.Text
+  // Precio en bolivianos. Cero significa que el curso es gratuito.
+  precio      Decimal  @default(0) @db.Decimal(10, 2)
+  // Vigencia del curso. Si no se indican, el curso está siempre abierto.
+  fechaInicio DateTime? @map("fecha_inicio")
+  fechaFin    DateTime? @map("fecha_fin")
   activo      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

@@ -147,18 +147,40 @@ export const categoriaSchema = z.object({
 // ---- AULA VIRTUAL ----
 
 // Validación para crear/editar un curso
-export const cursoSchema = z.object({
-  titulo: z
-    .string()
-    .trim()
-    .min(3, "El título debe tener al menos 3 caracteres")
-    .max(150, "El título no puede exceder 150 caracteres"),
-  descripcion: z
-    .string()
-    .trim()
-    .min(10, "La descripción debe tener al menos 10 caracteres")
-    .max(3000, "La descripción no puede exceder 3000 caracteres"),
-});
+export const cursoSchema = z
+  .object({
+    titulo: z
+      .string()
+      .trim()
+      .min(3, "El título debe tener al menos 3 caracteres")
+      .max(150, "El título no puede exceder 150 caracteres"),
+    descripcion: z
+      .string()
+      .trim()
+      .min(10, "La descripción debe tener al menos 10 caracteres")
+      .max(3000, "La descripción no puede exceder 3000 caracteres"),
+    // Precio en bolivianos. Cero (o ausente) significa curso gratuito.
+    precio: z
+      .number()
+      .min(0, "El precio no puede ser negativo")
+      .max(99999, "El precio es demasiado alto")
+      .optional(),
+    // Fechas opcionales: sin ellas el curso está siempre abierto
+    fechaInicio: z
+      .string()
+      .optional()
+      .nullable()
+      .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha de inicio inválida" }),
+    fechaFin: z
+      .string()
+      .optional()
+      .nullable()
+      .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha de fin inválida" }),
+  })
+  .refine(
+    (d) => !d.fechaInicio || !d.fechaFin || Date.parse(d.fechaFin) >= Date.parse(d.fechaInicio),
+    { message: "La fecha de fin debe ser posterior a la de inicio", path: ["fechaFin"] }
+  );
 
 // Validación para el título de un material (el archivo se valida aparte)
 export const materialSchema = z.object({

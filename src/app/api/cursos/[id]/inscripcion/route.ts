@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { puedeInscribirse } from "@/lib/dominio";
 
 export async function POST(
   _request: NextRequest,
@@ -23,15 +24,21 @@ export async function POST(
     }
 
     const { id } = params;
-    const curso = await prisma.curso.findFirst({
-      where: { id, activo: true },
-      select: { id: true, profesorId: true },
+    const curso = await prisma.curso.findUnique({
+      where: { id },
+      select: { id: true, profesorId: true, activo: true, fechaInicio: true, fechaFin: true },
     });
     if (!curso) {
-      return NextResponse.json({ error: "Curso no encontrado o inactivo" }, { status: 404 });
+      return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
     }
     if (curso.profesorId === payload.userId) {
       return NextResponse.json({ error: "No puedes inscribirte en tu propio curso" }, { status: 400 });
+    }
+
+    // Un curso desactivado o ya finalizado no admite nuevas inscripciones
+    const vigencia = puedeInscribirse(curso);
+    if (!vigencia.permitido) {
+      return NextResponse.json({ error: vigencia.mensaje }, { status: 400 });
     }
 
     try {

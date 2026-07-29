@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Button from "@/components/ui/Button";
 import ProfesorForm from "@/components/profesores/ProfesorForm";
 import AgendaSemanal from "@/components/profesores/AgendaSemanal";
+import FotoPerfil from "@/components/perfil/FotoPerfil";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -557,6 +558,14 @@ export default function ProfesorDashboardPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Editar perfil</h2>
           <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
             <div className="space-y-4">
+              <div className="pb-4 border-b border-gray-100">
+                <FotoPerfil
+                  nombre={perfil?.nombre || usuario?.nombre || ""}
+                  foto={perfil?.foto ?? null}
+                  color="#059669"
+                  onCambio={(nueva) => setPerfil((p) => (p ? { ...p, foto: nueva } : p))}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input

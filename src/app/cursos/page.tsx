@@ -10,13 +10,19 @@ import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
+import Avatar from "@/components/ui/Avatar";
 import Cargando from "@/components/ui/Cargando";
+import SelectorFecha from "@/components/ui/SelectorFecha";
 import { FadeIn } from "@/components/ui/Motion";
+import { SIMBOLO_MONEDA, formatearPrecio, esCursoGratuito, describirVigencia } from "@/lib/dominio";
 
 interface Curso {
   id: string;
   titulo: string;
   descripcion: string;
+  precio?: number | string;
+  fechaInicio?: string | null;
+  fechaFin?: string | null;
   profesor: { id: string; nombre: string; foto: string | null; verificado?: boolean };
   _count: { inscripciones: number; materiales: number };
 }
@@ -35,6 +41,10 @@ export default function CursosPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  const [esDePago, setEsDePago] = useState(false);
+  const [precio, setPrecio] = useState("");
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
   const [creando, setCreando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
 
@@ -71,7 +81,13 @@ export default function CursosPage() {
       const res = await fetch("/api/cursos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titulo, descripcion }),
+        body: JSON.stringify({
+          titulo,
+          descripcion,
+          precio: esDePago ? Number(precio) || 0 : 0,
+          fechaInicio: fechaInicio || null,
+          fechaFin: fechaFin || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -81,6 +97,10 @@ export default function CursosPage() {
       setModalAbierto(false);
       setTitulo("");
       setDescripcion("");
+      setEsDePago(false);
+      setPrecio("");
+      setFechaInicio("");
+      setFechaFin("");
       setTab("mios");
       await cargar("mios", usuario);
     } finally {
@@ -140,9 +160,26 @@ export default function CursosPage() {
               href={`/cursos/${c.id}`}
               className="h-full bg-white border border-gray-200 rounded-xl p-5 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 transition-all flex flex-col"
             >
-              <h3 className="font-semibold text-gray-900 line-clamp-2">{c.titulo}</h3>
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="font-semibold text-gray-900 line-clamp-2">{c.titulo}</h3>
+                <span
+                  className={`flex-shrink-0 text-xs font-semibold rounded-full px-2 py-0.5 ${
+                    esCursoGratuito(c.precio)
+                      ? "bg-green-50 text-green-700"
+                      : "bg-blue-50 text-blue-700"
+                  }`}
+                >
+                  {esCursoGratuito(c.precio) ? "Gratis" : formatearPrecio(c.precio)}
+                </span>
+              </div>
               <p className="text-sm text-gray-600 mt-2 line-clamp-3 flex-1">{c.descripcion}</p>
-              <div className="flex items-center gap-1.5 mt-4 text-sm text-gray-500">
+              {(c.fechaInicio || c.fechaFin) && (
+                <p className="text-xs text-gray-400 mt-2">
+                  📅 {describirVigencia({ activo: true, fechaInicio: c.fechaInicio, fechaFin: c.fechaFin })}
+                </p>
+              )}
+              <div className="flex items-center gap-1.5 mt-3 text-sm text-gray-500">
+                <Avatar nombre={c.profesor.nombre} foto={c.profesor.foto} tamano={22} />
                 <span>{c.profesor.nombre}</span>
                 {c.profesor.verificado && <BadgeVerificado soloIcono />}
               </div>
@@ -182,6 +219,64 @@ export default function CursosPage() {
               placeholder="¿Qué aprenderán y qué material encontrarán en el curso?"
             />
           </div>
+          {/* Precio: gratuito por defecto */}
+          <div className="border-t border-gray-100 pt-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={esDePago}
+                onChange={(e) => setEsDePago(e.target.checked)}
+                className="w-4 h-4 accent-[var(--c-primary)]"
+              />
+              <span className="text-sm font-medium text-gray-700">Este curso tiene costo</span>
+            </label>
+            {esDePago ? (
+              <div className="mt-2">
+                <label className="block text-xs text-gray-500 mb-1">Precio del curso ({SIMBOLO_MONEDA})</label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="Ej: 250"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  El estudiante te pagará directamente y tú confirmarás la inscripción.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                El curso será gratuito y los estudiantes accederán al inscribirse.
+              </p>
+            )}
+          </div>
+
+          {/* Vigencia opcional */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-sm font-medium text-gray-700 mb-2">Duración (opcional)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Comienza</label>
+                <SelectorFecha valor={fechaInicio} onChange={setFechaInicio} placeholder="Sin fecha" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Termina</label>
+                <SelectorFecha
+                  valor={fechaFin}
+                  onChange={setFechaFin}
+                  min={fechaInicio || undefined}
+                  placeholder="Sin fecha"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Si no indicas fechas, el curso estará disponible de forma permanente.
+            </p>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button type="button" variante="ghost" onClick={() => setModalAbierto(false)}>Cancelar</Button>
             <Button type="submit" cargando={creando}>Crear curso</Button>

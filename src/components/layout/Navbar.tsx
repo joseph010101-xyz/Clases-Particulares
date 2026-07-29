@@ -9,6 +9,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import CampanaNotificaciones from "@/components/layout/CampanaNotificaciones";
+import Avatar from "@/components/ui/Avatar";
 import SelectorTema from "@/components/tema/SelectorTema";
 import { puedeModerar } from "@/lib/dominio/permisos";
 import { identidadDe } from "@/lib/rolesUI";
@@ -155,12 +156,12 @@ export default function Navbar() {
                   onClick={() => setMenuAbierto(!menuAbierto)}
                   className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
                 >
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                    style={{ backgroundColor: identidad?.color ?? "var(--c-primary)" }}
-                  >
-                    {usuario.nombre.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar
+                    nombre={usuario.nombre}
+                    foto={usuario.foto}
+                    color={identidad?.color}
+                    tamano={32}
+                  />
                   <span className="text-sm font-medium">{usuario.nombre.split(" ")[0]}</span>
                   {identidad && (
                     <span
@@ -247,12 +248,7 @@ export default function Navbar() {
             <div className="flex flex-col gap-3">
               {usuario && identidad && (
                 <div className="flex items-center gap-2 pb-2">
-                  <span
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold"
-                    style={{ backgroundColor: identidad.color }}
-                  >
-                    {usuario.nombre.charAt(0).toUpperCase()}
-                  </span>
+                  <Avatar nombre={usuario.nombre} foto={usuario.foto} color={identidad.color} tamano={32} />
                   <span className="text-sm font-medium text-gray-900">{usuario.nombre}</span>
                   <span
                     className="text-[11px] font-semibold text-white px-2 py-0.5 rounded-full"

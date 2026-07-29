@@ -31,6 +31,9 @@ export async function GET(request: NextRequest) {
           id: true,
           titulo: true,
           descripcion: true,
+          precio: true,
+          fechaInicio: true,
+          fechaFin: true,
           activo: true,
           createdAt: true,
           profesor: { select: { id: true, nombre: true, foto: true, verificado: true } },
@@ -48,6 +51,9 @@ export async function GET(request: NextRequest) {
         id: true,
         titulo: true,
         descripcion: true,
+        precio: true,
+        fechaInicio: true,
+        fechaFin: true,
         createdAt: true,
         profesor: { select: { id: true, nombre: true, foto: true, verificado: true } },
         _count: { select: { inscripciones: true, materiales: true } },
@@ -80,8 +86,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { titulo, descripcion, precio, fechaInicio, fechaFin } = resultado.data;
     const curso = await prisma.curso.create({
-      data: { ...resultado.data, profesorId: payload.userId },
+      data: {
+        titulo,
+        descripcion,
+        precio: precio ?? 0,
+        fechaInicio: fechaInicio ? new Date(fechaInicio) : null,
+        fechaFin: fechaFin ? new Date(fechaFin) : null,
+        profesorId: payload.userId,
+      },
       select: { id: true, titulo: true },
     });
 

@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import FotoPerfil from "@/components/perfil/FotoPerfil";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
 import StarRating from "@/components/ui/StarRating";
@@ -354,6 +355,14 @@ export default function EstudianteDashboardPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Editar perfil</h2>
           <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
             <div className="space-y-4">
+              <div className="pb-4 border-b border-gray-100">
+                <FotoPerfil
+                  nombre={perfilForm.nombre || usuario?.nombre || ""}
+                  foto={perfilForm.foto || null}
+                  color="#0284c7"
+                  onCambio={(nueva) => setPerfilForm({ ...perfilForm, foto: nueva ?? "" })}
+                />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                 <input

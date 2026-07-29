@@ -41,6 +41,17 @@ export function descripcionFormatosPermitidos(): string {
   return Object.keys(EXTENSIONES_PERMITIDAS).join(", ");
 }
 
+/** Tamaño máximo para una foto de perfil (5 MB). */
+export const MAX_BYTES_FOTO = 5 * 1024 * 1024;
+
+const EXTENSIONES_IMAGEN = ["jpg", "jpeg", "png", "webp", "gif"];
+
+/** ¿Sirve como foto de perfil? Solo imágenes de mapa de bits (SVG queda fuera
+ *  a propósito: puede contener scripts). */
+export function esImagenPermitida(nombreArchivo: string): boolean {
+  return EXTENSIONES_IMAGEN.includes(extensionDe(nombreArchivo));
+}
+
 /** Presenta un tamaño en bytes de forma legible. */
 export function formatearTamano(bytes: number | null | undefined): string {
   const n = Number(bytes);
