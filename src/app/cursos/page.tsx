@@ -47,6 +47,7 @@ export default function CursosPage() {
   const [fechaFin, setFechaFin] = useState("");
   const [creando, setCreando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
+  const [puedeCobrar, setPuedeCobrar] = useState(true);
 
   const cargar = useCallback(async (t: "catalogo" | "mios", u: Usuario | null) => {
     let url = "/api/cursos";
@@ -63,6 +64,14 @@ export default function CursosPage() {
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
       const u = meRes.ok ? (await meRes.json()).usuario : null;
       setUsuario(u);
+      // Saber de antemano si el profesor puede cobrar evita que descubra el
+      // impedimento solo al enviar el formulario.
+      if (u?.rol === "PROFESOR") {
+        fetch("/api/perfil/cobro", { cache: "no-store" })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => setPuedeCobrar(Boolean(d?.puedeCobrar)))
+          .catch(() => {});
+      }
       await cargar("catalogo", u);
       setCargando(false);
     })();
@@ -246,6 +255,15 @@ export default function CursosPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   El estudiante te pagará directamente y tú confirmarás la inscripción.
                 </p>
+                {!puedeCobrar && (
+                  <div className="mt-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-xs">
+                    Todavía no tienes configurado cómo cobrar. Ve a{" "}
+                    <Link href="/profesores/dashboard" className="underline font-medium">
+                      tu panel → Cobros
+                    </Link>{" "}
+                    y añade tu QR, cuenta bancaria o Tigo Money antes de publicarlo.
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs text-gray-500 mt-1">

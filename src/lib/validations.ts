@@ -225,6 +225,21 @@ export const calificacionSchema = z.object({
     .nullable(),
 });
 
+// ---- DATOS DE COBRO ----
+
+// Todos los campos son opcionales: el profesor configura los canales que use.
+// La regla de "al menos uno utilizable" vive en el dominio (tieneMetodoDeCobro).
+const textoCobro = (max: number, etiqueta: string) =>
+  z.string().trim().max(max, `${etiqueta} no puede exceder ${max} caracteres`).optional().nullable();
+
+export const datosCobroSchema = z.object({
+  banco: textoCobro(100, "El banco"),
+  titular: textoCobro(150, "El titular"),
+  numeroCuenta: textoCobro(50, "El número de cuenta"),
+  tigoMoney: textoCobro(20, "El número de Tigo Money"),
+  instrucciones: textoCobro(1000, "Las indicaciones"),
+});
+
 // ---- TIPOS INFERIDOS ----
 // Estos tipos se pueden usar en el frontend y backend
 

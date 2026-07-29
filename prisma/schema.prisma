@@ -103,6 +103,8 @@ model Usuario {
   cursos        Curso[]
   inscripciones Inscripcion[]
   entregas      Entrega[]
+  // Datos con los que el profesor recibe los pagos
+  datosCobro    DatosCobro?
 
   @@map("usuarios")
 }
@@ -265,6 +267,39 @@ model RegistroAuditoria {
   @@index([createdAt])
   @@index([actorId])
   @@map("registros_auditoria")
+}
+
+// ---- COBROS ----
+
+// Datos con los que un profesor recibe los pagos de sus cursos y clases.
+// La plataforma no procesa dinero: solo muestra estos datos al estudiante y
+// deja constancia del pago. Por eso conviven varios canales del mercado
+// boliviano (QR interoperable, transferencia bancaria y billetera móvil).
+model DatosCobro {
+  id         String @id @default(uuid())
+  profesorId String @unique @map("profesor_id")
+
+  // QR bancario: la vía más extendida en Bolivia
+  qrUrl      String? @map("qr_url")
+  qrPublicId String? @map("qr_public_id")
+
+  // Transferencia bancaria
+  banco        String?
+  titular      String?
+  numeroCuenta String? @map("numero_cuenta")
+
+  // Billetera móvil
+  tigoMoney String? @map("tigo_money")
+
+  // Indicaciones libres para el estudiante (p. ej. "pon tu nombre en el detalle")
+  instrucciones String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profesor Usuario @relation(fields: [profesorId], references: [id], onDelete: Cascade)
+
+  @@map("datos_cobro")
 }
 
 // ---- AULA VIRTUAL ----

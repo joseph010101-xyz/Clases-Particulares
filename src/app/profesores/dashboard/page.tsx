@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 import ProfesorForm from "@/components/profesores/ProfesorForm";
 import AgendaSemanal from "@/components/profesores/AgendaSemanal";
 import FotoPerfil from "@/components/perfil/FotoPerfil";
+import PanelCobros from "@/components/profesores/PanelCobros";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
@@ -79,7 +80,7 @@ export default function ProfesorDashboardPage() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [cargando, setCargando] = useState(true);
   const [tab, setTab] = useState<
-    "servicios" | "agenda" | "reservas" | "disponibilidad" | "perfil"
+    "servicios" | "agenda" | "reservas" | "disponibilidad" | "cobros" | "perfil"
   >("servicios");
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [servicioEditando, setServicioEditando] = useState<Servicio | null>(null);
@@ -340,6 +341,14 @@ export default function ProfesorDashboardPage() {
           Horarios
         </button>
         <button
+          onClick={() => setTab("cobros")}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            tab === "cobros" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          Cobros
+        </button>
+        <button
           onClick={() => setTab("perfil")}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
             tab === "perfil" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
@@ -550,6 +559,16 @@ export default function ProfesorDashboardPage() {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {tab === "cobros" && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Cómo quieres cobrar</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Estos datos se muestran al estudiante cuando se inscribe en un curso de pago.
+          </p>
+          <PanelCobros />
         </div>
       )}
 

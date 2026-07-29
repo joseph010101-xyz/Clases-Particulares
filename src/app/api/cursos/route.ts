@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { cursoSchema } from "@/lib/validations";
+import { tieneMetodoDeCobro } from "@/lib/dominio";
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,6 +88,24 @@ export async function POST(request: NextRequest) {
     }
 
     const { titulo, descripcion, precio, fechaInicio, fechaFin } = resultado.data;
+
+    // Un curso de pago exige que el profesor tenga cómo recibir el dinero:
+    // de lo contrario el estudiante no sabría a dónde pagar.
+    if ((precio ?? 0) > 0) {
+      const datosCobro = await prisma.datosCobro.findUnique({
+        where: { profesorId: payload.userId },
+      });
+      if (!tieneMetodoDeCobro(datosCobro)) {
+        return NextResponse.json(
+          {
+            error:
+              "Para publicar un curso de pago primero configura cómo quieres cobrar (QR, cuenta bancaria o Tigo Money) en tu panel.",
+            codigo: "SIN_METODO_COBRO",
+          },
+          { status: 400 }
+        );
+      }
+    }
     const curso = await prisma.curso.create({
       data: {
         titulo,
