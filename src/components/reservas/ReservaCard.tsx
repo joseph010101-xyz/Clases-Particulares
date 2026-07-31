@@ -5,9 +5,12 @@
 
 "use client";
 
+import { useState } from "react";
 import Card, { CardBody } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import PagoClase from "@/components/reservas/PagoClase";
 import { formatearPrecioHora } from "@/lib/dominio/moneda";
+import { ETIQUETA_ESTADO_PAGO, type EstadoPago } from "@/lib/dominio";
 
 interface ReservaCardProps {
   id: string;
@@ -22,9 +25,11 @@ interface ReservaCardProps {
   precioHora: number | string;
   modalidad: string;
   tieneResena: boolean;
+  estadoPago?: EstadoPago | null;
   rolUsuario: "PROFESOR" | "ESTUDIANTE";
   onCambiarEstado?: (id: string, estado: string) => Promise<void>;
   onResenar?: (id: string) => void;
+  onPagoActualizado?: () => void;
 }
 
 const coloresEstado: Record<string, string> = {
@@ -32,6 +37,13 @@ const coloresEstado: Record<string, string> = {
   CONFIRMADA: "bg-green-100 text-green-800",
   CANCELADA: "bg-red-100 text-red-800",
   COMPLETADA: "bg-blue-100 text-blue-800",
+};
+
+const coloresPago: Record<EstadoPago, string> = {
+  PENDIENTE: "bg-amber-100 text-amber-800",
+  COMPLETADO: "bg-green-100 text-green-800",
+  FALLIDO: "bg-red-100 text-red-800",
+  REEMBOLSADO: "bg-gray-100 text-gray-700",
 };
 
 export default function ReservaCard({
@@ -47,16 +59,25 @@ export default function ReservaCard({
   precioHora,
   modalidad,
   tieneResena,
+  estadoPago,
   rolUsuario,
   onCambiarEstado,
   onResenar,
+  onPagoActualizado,
 }: ReservaCardProps) {
+  const [pagoAbierto, setPagoAbierto] = useState(false);
+
   const fechaFormateada = new Date(fecha).toLocaleDateString("es-ES", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+
+  // El dinero solo entra en juego con la clase ya aceptada y con un precio.
+  const cobrable =
+    Number(precioHora) > 0 && (estado === "CONFIRMADA" || estado === "COMPLETADA");
+  const pagoResuelto = estadoPago === "COMPLETADO" || estadoPago === "REEMBOLSADO";
 
   return (
     <Card className="overflow-hidden">
@@ -68,6 +89,11 @@ export default function ReservaCard({
               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${coloresEstado[estado]}`}>
                 {estado}
               </span>
+              {cobrable && estadoPago && (
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${coloresPago[estadoPago]}`}>
+                  Pago: {ETIQUETA_ESTADO_PAGO[estadoPago].toLowerCase()}
+                </span>
+              )}
             </div>
 
             <p className="text-sm text-gray-600">
@@ -147,8 +173,37 @@ export default function ReservaCard({
           {estado === "COMPLETADA" && tieneResena && (
             <span className="text-sm text-green-600 font-medium">✓ Reseña enviada</span>
           )}
+
+          {/* Pago de la clase: el estudiante lo registra, el profesor lo confirma */}
+          {cobrable && !(rolUsuario === "PROFESOR" && !estadoPago) && (
+            <Button
+              tamano="sm"
+              variante={pagoResuelto ? "secondary" : "primary"}
+              onClick={() => setPagoAbierto(true)}
+            >
+              {rolUsuario === "ESTUDIANTE"
+                ? pagoResuelto
+                  ? "Ver el pago"
+                  : estadoPago
+                    ? "Ver o corregir el pago"
+                    : "Pagar la clase"
+                : estadoPago === "PENDIENTE"
+                  ? "Revisar el pago"
+                  : "Ver el pago"}
+            </Button>
+          )}
         </div>
       </CardBody>
+
+      {pagoAbierto && (
+        <PagoClase
+          reservaId={id}
+          rol={rolUsuario}
+          abierto={pagoAbierto}
+          onCerrar={() => setPagoAbierto(false)}
+          onCambio={() => onPagoActualizado?.()}
+        />
+      )}
     </Card>
   );
 }

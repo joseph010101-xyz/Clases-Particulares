@@ -18,6 +18,7 @@ import Select from "@/components/ui/Select";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import { formatearPrecioHora } from "@/lib/dominio/moneda";
+import type { EstadoPago } from "@/lib/dominio";
 
 interface Servicio {
   id: string;
@@ -41,6 +42,7 @@ interface Reserva {
   servicio: { materia: string; precioHora: number; modalidad: string; profesor: { nombre: string } };
   estudiante: { nombre: string };
   resena: { calificacion: number } | null;
+  pago?: { estado: EstadoPago } | null;
 }
 
 interface Disponibilidad {
@@ -198,6 +200,12 @@ export default function ProfesorDashboardPage() {
     } else {
       toast.error("No se pudo eliminar el servicio");
     }
+  };
+
+  // Tras confirmar o registrar un pago basta con refrescar las reservas
+  const recargarReservas = async () => {
+    const res = await fetch("/api/reservas", { cache: "no-store" });
+    if (res.ok) setReservas((await res.json()).reservas || []);
   };
 
   const handleCambiarEstadoReserva = async (id: string, estado: string) => {
@@ -487,8 +495,10 @@ export default function ProfesorDashboardPage() {
                   precioHora={reserva.servicio.precioHora}
                   modalidad={reserva.servicio.modalidad}
                   tieneResena={!!reserva.resena}
+                  estadoPago={reserva.pago?.estado ?? null}
                   rolUsuario="PROFESOR"
                   onCambiarEstado={handleCambiarEstadoReserva}
+                  onPagoActualizado={recargarReservas}
                 />
               ))}
             </div>

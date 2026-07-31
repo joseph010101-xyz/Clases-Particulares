@@ -37,6 +37,29 @@ export function puedeEnviarComprobante(estado: EstadoInscripcion | null | undefi
   return estado === "PENDIENTE_PAGO" || estado === "RECHAZADA";
 }
 
+// Horas que tiene el estudiante para enviar su comprobante antes de que la
+// inscripción caduque.
+export const PLAZO_PAGO_HORAS = 72;
+
+/**
+ * Indica si una inscripción sin pagar debe caducar. Solo caduca la que nunca
+ * envió comprobante: si ya lo envió, la pelota está en el tejado del profesor y
+ * dejarla caducar castigaría al estudiante por una demora ajena.
+ *
+ * Sin esto, el panel del profesor se llena de inscripciones fantasma de gente
+ * que se apuntó por curiosidad y nunca pagó.
+ */
+export function inscripcionImpagaCaducada(
+  estado: EstadoInscripcion | null | undefined,
+  creadaEn: Date,
+  tieneComprobante: boolean,
+  ahora: Date = new Date()
+): boolean {
+  if (estado !== "PENDIENTE_PAGO" || tieneComprobante) return false;
+  const limite = creadaEn.getTime() + PLAZO_PAGO_HORAS * 60 * 60 * 1000;
+  return ahora.getTime() >= limite;
+}
+
 export type DecisionPago = "APROBAR" | "RECHAZAR";
 
 /**

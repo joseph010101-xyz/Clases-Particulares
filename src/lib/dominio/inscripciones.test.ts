@@ -5,6 +5,8 @@ import {
   puedeEnviarComprobante,
   puedeRevisarPago,
   estadoTrasDecision,
+  inscripcionImpagaCaducada,
+  PLAZO_PAGO_HORAS,
 } from "./inscripciones";
 
 describe("estadoInicialInscripcion", () => {
@@ -62,5 +64,27 @@ describe("estadoTrasDecision", () => {
   it("aprobar activa y rechazar deja constancia", () => {
     expect(estadoTrasDecision("APROBAR")).toBe("ACTIVA");
     expect(estadoTrasDecision("RECHAZAR")).toBe("RECHAZADA");
+  });
+});
+
+describe("inscripcionImpagaCaducada", () => {
+  const ahora = new Date("2026-03-10T12:00:00");
+  const hace = (horas: number) => new Date(ahora.getTime() - horas * 60 * 60 * 1000);
+
+  it("caduca la que nunca envió comprobante pasado el plazo", () => {
+    expect(inscripcionImpagaCaducada("PENDIENTE_PAGO", hace(PLAZO_PAGO_HORAS + 1), false, ahora)).toBe(true);
+  });
+
+  it("respeta a quien todavía está dentro del plazo", () => {
+    expect(inscripcionImpagaCaducada("PENDIENTE_PAGO", hace(PLAZO_PAGO_HORAS - 1), false, ahora)).toBe(false);
+  });
+
+  it("no castiga al estudiante por la demora del profesor en revisar", () => {
+    expect(inscripcionImpagaCaducada("PENDIENTE_PAGO", hace(PLAZO_PAGO_HORAS + 100), true, ahora)).toBe(false);
+  });
+
+  it("no toca las inscripciones activas ni las rechazadas", () => {
+    expect(inscripcionImpagaCaducada("ACTIVA", hace(500), false, ahora)).toBe(false);
+    expect(inscripcionImpagaCaducada("RECHAZADA", hace(500), false, ahora)).toBe(false);
   });
 });

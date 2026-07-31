@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { expirarInscripcionesImpagas } from "@/lib/expiracion";
 
 export async function GET(
   _request: NextRequest,
@@ -28,6 +29,9 @@ export async function GET(
     if (curso.profesorId !== payload.userId) {
       return NextResponse.json({ error: "Solo el profesor del curso puede verlas" }, { status: 403 });
     }
+
+    // El panel del profesor es donde molesta la basura: se limpia al abrirlo
+    await expirarInscripcionesImpagas();
 
     const inscripciones = await prisma.inscripcion.findMany({
       where: { cursoId: id },

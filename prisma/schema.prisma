@@ -276,6 +276,8 @@ enum AccionAuditoria {
   USUARIO_ACTIVADO
   USUARIO_DESACTIVADO
   ROL_CAMBIADO
+  // Arbitraje: el administrador revierte la decisión del profesor sobre un pago
+  PAGO_ARBITRADO
 }
 
 // Registro de acciones sensibles. A propósito NO tiene relaciones con Usuario:

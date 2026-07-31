@@ -8,7 +8,8 @@ export type AccionAuditoriaUI =
   | "PROFESOR_VERIFICACION_REVOCADA"
   | "USUARIO_ACTIVADO"
   | "USUARIO_DESACTIVADO"
-  | "ROL_CAMBIADO";
+  | "ROL_CAMBIADO"
+  | "PAGO_ARBITRADO";
 
 export const DESCRIPCION_ACCION: Record<AccionAuditoriaUI, string> = {
   PROFESOR_VERIFICADO: "Verificó a un profesor",
@@ -16,6 +17,7 @@ export const DESCRIPCION_ACCION: Record<AccionAuditoriaUI, string> = {
   USUARIO_ACTIVADO: "Activó una cuenta",
   USUARIO_DESACTIVADO: "Desactivó una cuenta",
   ROL_CAMBIADO: "Cambió el rol de un usuario",
+  PAGO_ARBITRADO: "Arbitró un pago en disputa",
 };
 
 // Colores de estado reservados: verde para altas/aprobaciones, rojo para bajas,
@@ -26,6 +28,7 @@ export const COLOR_ACCION: Record<AccionAuditoriaUI, string> = {
   USUARIO_ACTIVADO: "#059669",
   USUARIO_DESACTIVADO: "#dc2626",
   ROL_CAMBIADO: "#d97706",
+  PAGO_ARBITRADO: "#7c3aed",
 };
 
 /** Texto relativo compacto ("hace 3 h", "hace 2 d"). */

@@ -9,6 +9,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeInscribirse, estadoInicialInscripcion } from "@/lib/dominio";
+import { expirarInscripcionesImpagas } from "@/lib/expiracion";
 import { notificar } from "@/lib/notificaciones";
 
 export async function POST(
@@ -23,6 +24,10 @@ export async function POST(
     if (payload.rol !== "ESTUDIANTE") {
       return NextResponse.json({ error: "Solo los estudiantes pueden inscribirse" }, { status: 403 });
     }
+
+    // Antes de comprobar la restricción única: un intento anterior caducado no
+    // debe impedir que el estudiante vuelva a apuntarse.
+    await expirarInscripcionesImpagas();
 
     const { id } = params;
     const curso = await prisma.curso.findUnique({

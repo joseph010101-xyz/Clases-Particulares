@@ -67,6 +67,11 @@ export async function GET(request: NextRequest) {
           resena: {
             select: { calificacion: true },
           },
+          // Estado del pago, para que la tarjeta sepa qué ofrecer sin pedir
+          // el detalle de cada reserva por separado.
+          pago: {
+            select: { estado: true, monto: true, metodoPago: true },
+          },
         },
         orderBy: { fecha: "desc" },
         skip: (pagina - 1) * porPagina,

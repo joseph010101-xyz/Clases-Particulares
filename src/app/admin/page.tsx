@@ -16,6 +16,7 @@ import Cargando from "@/components/ui/Cargando";
 import Select from "@/components/ui/Select";
 import PanelResumen from "@/components/admin/PanelResumen";
 import PanelAuditoria from "@/components/admin/PanelAuditoria";
+import PanelPagos from "@/components/admin/PanelPagos";
 import PanelCategorias from "@/components/admin/PanelCategorias";
 import FichaUsuario from "@/components/admin/FichaUsuario";
 import { tiempoRelativo } from "@/lib/auditoriaUI";
@@ -57,7 +58,7 @@ export default function AdminPage() {
   const [miRol, setMiRol] = useState<Rol | null>(null);
   const [cargando, setCargando] = useState(true);
   const [pestana, setPestana] = useState<
-    "resumen" | "profesores" | "usuarios" | "categorias" | "auditoria"
+    "resumen" | "profesores" | "usuarios" | "categorias" | "pagos" | "auditoria"
   >("resumen");
   // Paginación del listado de usuarios
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
@@ -214,6 +215,16 @@ export default function AdminPage() {
             Categorías
           </button>
         )}
+        {esAdmin && (
+          <button
+            onClick={() => setPestana("pagos")}
+            className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              pestana === "pagos" ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Pagos
+          </button>
+        )}
         <button
           onClick={() => setPestana("auditoria")}
           className={`px-3 sm:px-4 py-2 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
@@ -231,6 +242,9 @@ export default function AdminPage() {
       {pestana === "resumen" && <PanelResumen />}
 
       {/* --- Pestaña Auditoría --- */}
+      {/* --- Pestaña Pagos y arbitraje (solo ADMIN) --- */}
+      {pestana === "pagos" && esAdmin && <PanelPagos />}
+
       {pestana === "auditoria" && <PanelAuditoria />}
 
       {/* --- Pestaña Profesores --- */}

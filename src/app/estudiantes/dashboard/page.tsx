@@ -12,6 +12,7 @@ import FotoPerfil from "@/components/perfil/FotoPerfil";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
 import StarRating from "@/components/ui/StarRating";
+import type { EstadoPago } from "@/lib/dominio";
 
 interface Reserva {
   id: string;
@@ -23,6 +24,7 @@ interface Reserva {
   servicio: { materia: string; precioHora: number; modalidad: string; profesor: { nombre: string } };
   estudiante: { nombre: string };
   resena?: { calificacion: number } | null;
+  pago?: { estado: EstadoPago } | null;
 }
 
 interface Usuario {
@@ -93,6 +95,12 @@ export default function EstudianteDashboardPage() {
   useEffect(() => {
     fetchDatos();
   }, [fetchDatos]);
+
+  // Tras confirmar o registrar un pago basta con refrescar las reservas
+  const recargarReservas = async () => {
+    const res = await fetch("/api/reservas", { cache: "no-store" });
+    if (res.ok) setReservas((await res.json()).reservas || []);
+  };
 
   const handleCambiarEstado = async (id: string, estado: string) => {
     const res = await fetch(`/api/reservas/${id}`, {
@@ -260,8 +268,10 @@ export default function EstudianteDashboardPage() {
                   precioHora={reserva.servicio.precioHora}
                   modalidad={reserva.servicio.modalidad}
                   tieneResena={!!reserva.resena}
+                  estadoPago={reserva.pago?.estado ?? null}
                   rolUsuario="ESTUDIANTE"
                   onCambiarEstado={handleCambiarEstado}
+                  onPagoActualizado={recargarReservas}
                   onResenar={
                     reserva.estado === "COMPLETADA" && !reserva.resena
                       ? () => setReservaResena(reserva.id)

@@ -25,6 +25,14 @@ export function puedeAdministrarUsuarios(rol: string): boolean {
   return rol === "ADMIN";
 }
 
+/**
+ * ¿Puede el rol arbitrar un pago en disputa? Solo administradores: revertir la
+ * decisión de un profesor sobre dinero es más grave que moderar perfiles.
+ */
+export function puedeArbitrarPagos(rol: string): boolean {
+  return rol === "ADMIN";
+}
+
 /** ¿Es un rol válido y asignable? */
 export function esRolAsignable(rol: string): rol is Rol {
   return (ROLES_ASIGNABLES as string[]).includes(rol);
