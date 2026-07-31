@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { rutaDescargaMaterial } from "@/lib/descargas";
 import { materialSchema } from "@/lib/validations";
 import { subirArchivo, cloudinaryDisponible } from "@/lib/cloudinary";
 import {
@@ -88,7 +89,13 @@ export async function POST(
       select: { id: true, titulo: true, url: true, formato: true, bytes: true, createdAt: true },
     });
 
-    return NextResponse.json({ mensaje: "Material subido", material }, { status: 201 });
+    return NextResponse.json(
+      {
+        mensaje: "Material subido",
+        material: { ...material, url: rutaDescargaMaterial(material.id) },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error subiendo material:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

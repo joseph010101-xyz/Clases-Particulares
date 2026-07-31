@@ -11,6 +11,7 @@ import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
 import { inscripcionDaAcceso } from "@/lib/dominio";
 import { cloudinaryDisponible } from "@/lib/cloudinary";
+import { rutaDescargaMaterial } from "@/lib/descargas";
 
 export async function GET(
   _request: NextRequest,
@@ -59,11 +60,17 @@ export async function GET(
     // El material solo se entrega a quien tiene acceso.
     let materiales: unknown[] = [];
     if (puedeVerMaterial({ esDueño, estaInscrito })) {
-      materiales = await prisma.material.findMany({
+      const filas = await prisma.material.findMany({
         where: { cursoId: id },
         select: { id: true, titulo: true, url: true, formato: true, bytes: true, createdAt: true },
         orderBy: { createdAt: "desc" },
       });
+      // Se devuelve la ruta de nuestra API, nunca la de Cloudinary: esa es
+      // pública y saltaría la comprobación de inscripción.
+      materiales = filas.map((m) => ({
+        ...m,
+        url: m.url ? rutaDescargaMaterial(m.id) : null,
+      }));
     }
 
     // Quitamos profesorId del objeto expuesto (ya viene en profesor.id)

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { rutaDescargaEntrega } from "@/lib/descargas";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
 import { inscripcionDaAcceso } from "@/lib/dominio";
 
@@ -70,7 +71,15 @@ export async function GET(
         },
         orderBy: { createdAt: "desc" },
       });
-      return NextResponse.json({ tarea, esDueño: true, entregas });
+      return NextResponse.json({
+        tarea,
+        esDueño: true,
+        // La ruta propia, no la de Cloudinary: una entrega no es pública.
+        entregas: entregas.map((e) => ({
+          ...e,
+          url: e.url ? rutaDescargaEntrega(e.id) : null,
+        })),
+      });
     }
 
     // El estudiante solo ve su propia entrega
@@ -87,7 +96,13 @@ export async function GET(
         createdAt: true,
       },
     });
-    return NextResponse.json({ tarea, esDueño: false, miEntrega });
+    return NextResponse.json({
+      tarea,
+      esDueño: false,
+      miEntrega: miEntrega
+        ? { ...miEntrega, url: miEntrega.url ? rutaDescargaEntrega(miEntrega.id) : null }
+        : null,
+    });
   } catch (error) {
     console.error("Error obteniendo tarea:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

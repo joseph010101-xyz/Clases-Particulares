@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { rutaDescargaEntrega } from "@/lib/descargas";
 import { subirArchivo, eliminarArchivo, cloudinaryDisponible, type TipoRecurso } from "@/lib/cloudinary";
 import {
   MAX_BYTES_ARCHIVO,
@@ -135,7 +136,13 @@ export async function POST(
       }
     }
 
-    return NextResponse.json({ mensaje: "Entrega registrada", entrega }, { status: 201 });
+    return NextResponse.json(
+      {
+        mensaje: "Entrega registrada",
+        entrega: { ...entrega, url: entrega.url ? rutaDescargaEntrega(entrega.id) : null },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error registrando entrega:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
