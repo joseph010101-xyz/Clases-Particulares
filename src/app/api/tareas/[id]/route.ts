@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
+import { inscripcionDaAcceso } from "@/lib/dominio";
 
 export async function GET(
   _request: NextRequest,
@@ -39,11 +40,13 @@ export async function GET(
     const esDueño = tarea.curso.profesorId === payload.userId;
     const estaInscrito = esDueño
       ? false
-      : Boolean(
-          await prisma.inscripcion.findUnique({
-            where: { cursoId_estudianteId: { cursoId: tarea.curso.id, estudianteId: payload.userId } },
-            select: { id: true },
-          })
+      : inscripcionDaAcceso(
+          (
+            await prisma.inscripcion.findUnique({
+              where: { cursoId_estudianteId: { cursoId: tarea.curso.id, estudianteId: payload.userId } },
+              select: { estado: true },
+            })
+          )?.estado
         );
 
     if (!puedeVerMaterial({ esDueño, estaInscrito })) {

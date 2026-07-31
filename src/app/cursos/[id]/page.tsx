@@ -15,6 +15,8 @@ import SelectorFecha from "@/components/ui/SelectorFecha";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import Avatar from "@/components/ui/Avatar";
+import PanelPago from "@/components/cursos/PanelPago";
+import RevisionPagos from "@/components/cursos/RevisionPagos";
 import {
   formatearTamano,
   descripcionFormatosPermitidos,
@@ -57,6 +59,7 @@ interface CursoDetalle {
   };
   esDueño: boolean;
   estaInscrito: boolean;
+  estadoInscripcion?: string | null;
   puedeVerMaterial: boolean;
   materiales: Material[];
   almacenamientoConfigurado?: boolean;
@@ -242,8 +245,11 @@ export default function CursoDetallePage() {
     );
   }
 
-  const { curso, esDueño, estaInscrito, puedeVerMaterial, materiales } = data;
+  const { curso, esDueño, estaInscrito, estadoInscripcion, puedeVerMaterial, materiales } = data;
   const esEstudiante = usuario?.rol === "ESTUDIANTE";
+  // Inscrito pero sin acceso todavía: falta pagar o el pago fue rechazado
+  const esperandoPago =
+    estadoInscripcion === "PENDIENTE_PAGO" || estadoInscripcion === "RECHAZADA";
   const finalizado = cursoFinalizado({
     activo: curso.activo,
     fechaInicio: curso.fechaInicio,
@@ -287,6 +293,16 @@ export default function CursoDetallePage() {
               <span className="text-sm font-medium text-blue-600">Tu curso</span>
             ) : estaInscrito ? (
               <Button variante="secondary" cargando={accion} onClick={darseDeBaja}>Darse de baja</Button>
+            ) : esperandoPago ? (
+              <span
+                className={`text-sm font-medium rounded-full px-3 py-1 ${
+                  estadoInscripcion === "RECHAZADA"
+                    ? "bg-red-50 text-red-700"
+                    : "bg-amber-50 text-amber-700"
+                }`}
+              >
+                {estadoInscripcion === "RECHAZADA" ? "Pago rechazado" : "Pago pendiente"}
+              </span>
             ) : finalizado ? (
               <span className="text-sm font-medium text-gray-500">Curso finalizado</span>
             ) : esEstudiante ? (
@@ -301,6 +317,14 @@ export default function CursoDetallePage() {
 
         <p className="text-gray-700 whitespace-pre-wrap mt-4">{curso.descripcion}</p>
       </div>
+
+      {/* Pago pendiente: el estudiante ve cómo pagar y envía su comprobante */}
+      {!esDueño && esperandoPago && (
+        <PanelPago cursoId={curso.id} onPagoEnviado={cargar} />
+      )}
+
+      {/* El profesor revisa las inscripciones y confirma los pagos */}
+      {esDueño && <RevisionPagos cursoId={curso.id} />}
 
       {/* Subida de material (solo dueño) */}
       {esDueño && (
@@ -341,7 +365,11 @@ export default function CursoDetallePage() {
       <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
         <h2 className="font-semibold text-gray-900 mb-3">Material del curso</h2>
         {!puedeVerMaterial ? (
-          <p className="text-sm text-gray-500">Inscríbete en el curso para acceder al material.</p>
+          <p className="text-sm text-gray-500">
+            {esperandoPago
+              ? "El material se abrirá cuando el profesor confirme tu pago."
+              : "Inscríbete en el curso para acceder al material."}
+          </p>
         ) : materiales.length === 0 ? (
           <p className="text-sm text-gray-500">Todavía no hay material publicado.</p>
         ) : (

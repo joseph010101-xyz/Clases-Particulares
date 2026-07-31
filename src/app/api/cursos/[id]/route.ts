@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
+import { inscripcionDaAcceso } from "@/lib/dominio";
 import { cloudinaryDisponible } from "@/lib/cloudinary";
 
 export async function GET(
@@ -42,13 +43,17 @@ export async function GET(
 
     const esDueño = payload?.userId === curso.profesorId;
 
+    // Solo una inscripción ACTIVA abre el material: si el pago está pendiente o
+    // fue rechazado, el estudiante ve el curso pero no su contenido.
     let estaInscrito = false;
+    let estadoInscripcion: string | null = null;
     if (payload && !esDueño) {
       const inscripcion = await prisma.inscripcion.findUnique({
         where: { cursoId_estudianteId: { cursoId: id, estudianteId: payload.userId } },
-        select: { id: true },
+        select: { estado: true },
       });
-      estaInscrito = Boolean(inscripcion);
+      estadoInscripcion = inscripcion?.estado ?? null;
+      estaInscrito = inscripcionDaAcceso(inscripcion?.estado);
     }
 
     // El material solo se entrega a quien tiene acceso.
@@ -69,6 +74,8 @@ export async function GET(
       curso: cursoPublico,
       esDueño,
       estaInscrito,
+      // Estado real, para que la interfaz sepa si mostrar el panel de pago
+      estadoInscripcion,
       puedeVerMaterial: puedeVerMaterial({ esDueño, estaInscrito }),
       materiales,
       // Permite avisar en la interfaz antes de intentar una subida

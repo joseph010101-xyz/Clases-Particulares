@@ -8,7 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
-import { puedeInscribirse } from "@/lib/dominio";
+import { puedeInscribirse, estadoInicialInscripcion } from "@/lib/dominio";
+import { notificar } from "@/lib/notificaciones";
 
 export async function POST(
   _request: NextRequest,
@@ -26,7 +27,14 @@ export async function POST(
     const { id } = params;
     const curso = await prisma.curso.findUnique({
       where: { id },
-      select: { id: true, profesorId: true, activo: true, fechaInicio: true, fechaFin: true },
+      select: {
+        id: true,
+        profesorId: true,
+        activo: true,
+        precio: true,
+        fechaInicio: true,
+        fechaFin: true,
+      },
     });
     if (!curso) {
       return NextResponse.json({ error: "Curso no encontrado" }, { status: 404 });
@@ -41,9 +49,15 @@ export async function POST(
       return NextResponse.json({ error: vigencia.mensaje }, { status: 400 });
     }
 
+    // Gratuito: acceso inmediato. De pago: queda esperando el comprobante y la
+    // confirmación del profesor.
+    const estado = estadoInicialInscripcion(Number(curso.precio));
+
+    let inscripcion;
     try {
-      await prisma.inscripcion.create({
-        data: { cursoId: id, estudianteId: payload.userId },
+      inscripcion = await prisma.inscripcion.create({
+        data: { cursoId: id, estudianteId: payload.userId, estado },
+        select: { id: true, estado: true },
       });
     } catch (error) {
       // Violación de la restricción única → ya estaba inscrito
@@ -53,7 +67,30 @@ export async function POST(
       throw error;
     }
 
-    return NextResponse.json({ mensaje: "Inscripción exitosa" }, { status: 201 });
+    // Avisar al profesor de que tiene un pago por revisar
+    if (estado === "PENDIENTE_PAGO") {
+      const curso2 = await prisma.curso.findUnique({
+        where: { id },
+        select: { titulo: true },
+      });
+      await notificar({
+        usuarioId: curso.profesorId,
+        tipo: "RESERVA_NUEVA",
+        mensaje: `${payload.nombre} quiere inscribirse en "${curso2?.titulo ?? "tu curso"}" y debe pagar`,
+        enlace: `/cursos/${id}`,
+      });
+    }
+
+    return NextResponse.json(
+      {
+        mensaje:
+          estado === "ACTIVA"
+            ? "Inscripción exitosa"
+            : "Inscripción registrada. Realiza el pago y envía tu comprobante.",
+        inscripcion,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error inscribiendo al curso:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

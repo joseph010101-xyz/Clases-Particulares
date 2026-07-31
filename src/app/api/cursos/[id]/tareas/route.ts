@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
 import { tareaSchema } from "@/lib/validations";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
+import { inscripcionDaAcceso } from "@/lib/dominio";
 
 export async function GET(
   _request: NextRequest,
@@ -27,17 +28,23 @@ export async function GET(
     }
 
     const esDueño = curso.profesorId === payload.userId;
+    // Solo la inscripción activa da acceso: con el pago pendiente no se ven
     const estaInscrito = esDueño
       ? false
-      : Boolean(
-          await prisma.inscripcion.findUnique({
-            where: { cursoId_estudianteId: { cursoId: id, estudianteId: payload.userId } },
-            select: { id: true },
-          })
+      : inscripcionDaAcceso(
+          (
+            await prisma.inscripcion.findUnique({
+              where: { cursoId_estudianteId: { cursoId: id, estudianteId: payload.userId } },
+              select: { estado: true },
+            })
+          )?.estado
         );
 
     if (!puedeVerMaterial({ esDueño, estaInscrito })) {
-      return NextResponse.json({ error: "Inscríbete para ver las tareas" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Necesitas una inscripción activa para ver las tareas" },
+        { status: 403 }
+      );
     }
 
     const tareas = await prisma.tarea.findMany({

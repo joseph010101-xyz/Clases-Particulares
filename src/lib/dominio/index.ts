@@ -11,3 +11,4 @@ export * from "./moneda";
 export * from "./archivos";
 export * from "./vigencia";
 export * from "./cobros";
+export * from "./inscripciones";

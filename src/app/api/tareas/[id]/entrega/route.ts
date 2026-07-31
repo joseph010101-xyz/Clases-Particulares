@@ -12,6 +12,7 @@ import {
   MAX_BYTES_ARCHIVO,
   esArchivoPermitido,
   descripcionFormatosPermitidos,
+  inscripcionDaAcceso,
 } from "@/lib/dominio";
 
 export const runtime = "nodejs";
@@ -38,13 +39,16 @@ export async function POST(
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
     }
 
-    // El estudiante debe estar inscrito en el curso de la tarea
+    // Solo con la inscripción activa: con el pago pendiente no se puede entregar
     const inscrito = await prisma.inscripcion.findUnique({
       where: { cursoId_estudianteId: { cursoId: tarea.curso.id, estudianteId: payload.userId } },
-      select: { id: true },
+      select: { estado: true },
     });
-    if (!inscrito) {
-      return NextResponse.json({ error: "Debes estar inscrito en el curso" }, { status: 403 });
+    if (!inscripcionDaAcceso(inscrito?.estado)) {
+      return NextResponse.json(
+        { error: "Necesitas una inscripción activa en el curso para entregar" },
+        { status: 403 }
+      );
     }
 
     const formData = await request.formData();

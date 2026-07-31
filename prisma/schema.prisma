@@ -4,6 +4,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  // "native" para el desarrollo en Windows; el musl con OpenSSL 3 es el de la
+  // imagen Alpine de Docker (sin él, el motor no se encuentra en tiempo de ejecución).
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -44,12 +47,20 @@ enum EstadoPago {
   REEMBOLSADO
 }
 
-// Método de pago
+// Método de pago. Son los canales reales del mercado boliviano: no hay
+// pasarelas de tarjeta ni PayPal operando para comercios del país.
 enum MetodoPago {
   EFECTIVO
+  QR
   TRANSFERENCIA
-  TARJETA
-  PAYPAL
+  TIGO_MONEY
+}
+
+// Situación de una inscripción a un curso
+enum EstadoInscripcion {
+  PENDIENTE_PAGO
+  ACTIVA
+  RECHAZADA
 }
 
 // Tipo de notificación
@@ -205,18 +216,34 @@ model Resena {
 }
 
 // Pagos de reservas
+// Registro de un pago. La plataforma no mueve dinero: guarda el comprobante que
+// sube el estudiante y la decisión del profesor al verificarlo en su cuenta.
+// Un pago pertenece a una reserva (clase particular) o a una inscripción
+// (curso); exactamente uno de los dos, lo que se garantiza en la capa de API.
 model Pago {
-  id         String     @id @default(uuid())
-  reservaId  String     @unique @map("reserva_id")
-  monto      Decimal    @db.Decimal(10, 2)
-  metodoPago MetodoPago @map("metodo_pago")
-  estado     EstadoPago @default(PENDIENTE)
-  referencia String?    // Referencia externa del pago
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  id            String     @id @default(uuid())
+  reservaId     String?    @unique @map("reserva_id")
+  inscripcionId String?    @unique @map("inscripcion_id")
+  monto         Decimal    @db.Decimal(10, 2)
+  metodoPago    MetodoPago @map("metodo_pago")
+  estado        EstadoPago @default(PENDIENTE)
+  referencia    String?    // Número de transacción indicado por el estudiante
+
+  // Comprobante que sube el estudiante (imagen o PDF en Cloudinary)
+  comprobanteUrl      String? @map("comprobante_url")
+  comprobantePublicId String? @map("comprobante_public_id")
+  comprobanteTipo     String? @map("comprobante_tipo") // image/raw, para el borrado
+
+  // Revisión por parte del profesor
+  revisadoEn    DateTime? @map("revisado_en")
+  motivoRechazo String?   @db.Text @map("motivo_rechazo")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relaciones
-  reserva Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  reserva     Reserva?     @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  inscripcion Inscripcion? @relation(fields: [inscripcionId], references: [id], onDelete: Cascade)
 
   @@index([estado])
   @@map("pagos")
@@ -334,11 +361,18 @@ model Inscripcion {
   id           String   @id @default(uuid())
   cursoId      String   @map("curso_id")
   estudianteId String   @map("estudiante_id")
+  // Un curso gratuito queda ACTIVA al instante; uno de pago espera a que el
+  // profesor confirme haber recibido el dinero.
+  estado       EstadoInscripcion @default(ACTIVA)
   createdAt    DateTime @default(now()) @map("created_at")
+  // El default permite añadir la columna sobre inscripciones que ya existían
+  // (db push no puede crear una columna obligatoria sin default con datos dentro).
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relaciones
   curso      Curso   @relation(fields: [cursoId], references: [id], onDelete: Cascade)
   estudiante Usuario @relation(fields: [estudianteId], references: [id], onDelete: Cascade)
+  pago       Pago?
 
   // Un estudiante no puede inscribirse dos veces al mismo curso
   @@unique([cursoId, estudianteId])
