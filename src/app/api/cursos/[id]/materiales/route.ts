@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { notificarAlCurso } from "@/lib/notificaciones";
 import { rutaDescargaMaterial } from "@/lib/descargas";
 import { materialSchema } from "@/lib/validations";
 import { subirArchivo, cloudinaryDisponible } from "@/lib/cloudinary";
@@ -87,6 +88,13 @@ export async function POST(
         bytes: subido.bytes,
       },
       select: { id: true, titulo: true, url: true, formato: true, bytes: true, createdAt: true },
+    });
+
+    await notificarAlCurso({
+      cursoId: id,
+      tipo: "MATERIAL_NUEVO",
+      mensaje: `Nuevo material en el curso: "${material.titulo}"`,
+      enlace: `/cursos/${id}`,
     });
 
     return NextResponse.json(

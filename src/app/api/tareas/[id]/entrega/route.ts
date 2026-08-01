@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { notificar } from "@/lib/notificaciones";
 import { rutaDescargaEntrega } from "@/lib/descargas";
 import { subirArchivo, eliminarArchivo, cloudinaryDisponible, type TipoRecurso } from "@/lib/cloudinary";
 import {
@@ -34,7 +35,7 @@ export async function POST(
     const { id } = params;
     const tarea = await prisma.tarea.findUnique({
       where: { id },
-      select: { id: true, curso: { select: { id: true } } },
+      select: { id: true, titulo: true, curso: { select: { id: true, profesorId: true } } },
     });
     if (!tarea) {
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
@@ -135,6 +136,14 @@ export async function POST(
         console.error("No se pudo borrar el archivo anterior:", e);
       }
     }
+
+    // El profesor se entera al momento en vez de descubrirlo al entrar
+    await notificar({
+      usuarioId: tarea.curso.profesorId,
+      tipo: "ENTREGA_RECIBIDA",
+      mensaje: `${payload.nombre} entregó "${tarea.titulo}"`,
+      enlace: `/tareas/${id}`,
+    });
 
     return NextResponse.json(
       {

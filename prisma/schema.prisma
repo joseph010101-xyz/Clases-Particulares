@@ -78,6 +78,10 @@ enum TipoNotificacion {
   PAGO_ARBITRADO
   PERFIL_VERIFICADO
   ENTREGA_CALIFICADA
+  // El aula: sin estos, publicar una tarea o subir material no avisaba a nadie
+  TAREA_NUEVA
+  MATERIAL_NUEVO
+  ENTREGA_RECIBIDA
 }
 
 // ---- MODELOS ----

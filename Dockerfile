@@ -28,8 +28,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# OpenSSL necesario para Prisma en Alpine
-RUN apk add --no-cache openssl
+# OpenSSL necesario para Prisma en Alpine.
+# tzdata es imprescindible: sin la base de zonas horarias, la variable TZ se
+# ignora en silencio y el contenedor corre en UTC. Para un producto boliviano
+# eso desplaza cuatro horas todo lo que dependa del reloj: fechas límite de
+# tareas, caducidad de reservas y el fin de vigencia de los cursos.
+RUN apk add --no-cache openssl tzdata
 
 # Crear usuario no-root por seguridad
 RUN addgroup --system --gid 1001 nodejs

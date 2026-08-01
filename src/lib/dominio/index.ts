@@ -14,3 +14,4 @@ export * from "./vigencia";
 export * from "./cobros";
 export * from "./inscripciones";
 export * from "./pagos";
+export * from "./pendientes";

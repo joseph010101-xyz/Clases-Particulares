@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { notificarAlCurso } from "@/lib/notificaciones";
 import { tareaSchema } from "@/lib/validations";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
 import { inscripcionDaAcceso } from "@/lib/dominio";
@@ -111,6 +112,13 @@ export async function POST(
         fechaLimite: fechaLimite ? new Date(fechaLimite) : null,
       },
       select: { id: true, titulo: true },
+    });
+
+    await notificarAlCurso({
+      cursoId: id,
+      tipo: "TAREA_NUEVA",
+      mensaje: `Nueva tarea: "${tarea.titulo}"${fechaLimite ? ` · entrega antes del ${new Date(fechaLimite).toLocaleDateString("es-BO")}` : ""}`,
+      enlace: `/tareas/${tarea.id}`,
     });
 
     return NextResponse.json({ mensaje: "Tarea creada", tarea }, { status: 201 });

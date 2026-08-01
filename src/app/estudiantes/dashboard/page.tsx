@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
+import PanelPendientes from "@/components/ui/PanelPendientes";
 import FotoPerfil from "@/components/perfil/FotoPerfil";
 import ReservaCard from "@/components/reservas/ReservaCard";
 import Modal from "@/components/ui/Modal";
@@ -38,6 +39,9 @@ export default function EstudianteDashboardPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  // Al cambiar algo (pagar, confirmar, calificar) hay que rehacer la lista
+  // de pendientes: si no, seguiría pidiendo algo que ya está hecho.
+  const [refrescoPendientes, setRefrescoPendientes] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [tab, setTab] = useState<"reservas" | "perfil">("reservas");
 
@@ -100,6 +104,7 @@ export default function EstudianteDashboardPage() {
   const recargarReservas = async () => {
     const res = await fetch("/api/reservas", { cache: "no-store" });
     if (res.ok) setReservas((await res.json()).reservas || []);
+    setRefrescoPendientes((n) => n + 1);
   };
 
   const handleCambiarEstado = async (id: string, estado: string) => {
@@ -188,6 +193,9 @@ export default function EstudianteDashboardPage() {
         </h1>
         <p className="mt-1 text-gray-600">Panel de estudiante</p>
       </div>
+
+      {/* Lo primero al entrar: qué le toca hacer, sin buscarlo curso por curso */}
+      <PanelPendientes recargar={refrescoPendientes} />
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
