@@ -15,6 +15,7 @@ import SelectorFecha from "@/components/ui/SelectorFecha";
 import SelectorHora from "@/components/ui/SelectorHora";
 import { useConfirm } from "@/components/ui/ConfirmProvider";
 import Avatar from "@/components/ui/Avatar";
+import Pestanas, { type Pestana } from "@/components/ui/Pestanas";
 import PanelPago from "@/components/cursos/PanelPago";
 import RevisionPagos from "@/components/cursos/RevisionPagos";
 import {
@@ -65,6 +66,8 @@ interface CursoDetalle {
   almacenamientoConfigurado?: boolean;
 }
 
+type Seccion = "info" | "material" | "tareas" | "pagos";
+
 interface Usuario {
   id: string;
   rol: "PROFESOR" | "ESTUDIANTE" | "ADMIN" | "MODERADOR";
@@ -90,6 +93,10 @@ export default function CursoDetallePage() {
   const [subiendo, setSubiendo] = useState(false);
   const [errorSubida, setErrorSubida] = useState("");
 
+  // Sección abierta y aviso de pagos pendientes en la pestaña del profesor
+  const [seccion, setSeccion] = useState<Seccion>("info");
+  const [hayPagosPorRevisar, setHayPagosPorRevisar] = useState(false);
+
   // Tareas
   const [tareas, setTareas] = useState<TareaResumen[]>([]);
   const [mostrarFormTarea, setMostrarFormTarea] = useState(false);
@@ -113,6 +120,17 @@ export default function CursoDetallePage() {
       setTareas(tRes.ok ? (await tRes.json()).tareas ?? [] : []);
     } else {
       setTareas([]);
+    }
+    // El punto de aviso en la pestaña "Pagos" evita que el profesor tenga que
+    // entrar a comprobar si hay algo esperándole.
+    if (d.esDueño) {
+      const iRes = await fetch(`/api/cursos/${id}/inscripciones`, { cache: "no-store" });
+      if (iRes.ok) {
+        const lista = (await iRes.json()).inscripciones ?? [];
+        setHayPagosPorRevisar(
+          lista.some((i: { estado: string; pago: unknown }) => i.estado === "PENDIENTE_PAGO" && i.pago)
+        );
+      }
     }
   }, [id]);
 
@@ -250,6 +268,23 @@ export default function CursoDetallePage() {
   // Inscrito pero sin acceso todavía: falta pagar o el pago fue rechazado
   const esperandoPago =
     estadoInscripcion === "PENDIENTE_PAGO" || estadoInscripcion === "RECHAZADA";
+
+  // Quien no tiene acceso solo ve la información: no tiene sentido ofrecerle
+  // secciones vacías que solo sirven para decirle que no puede entrar.
+  const sePuedenVerSecciones = puedeVerMaterial;
+  // Si se pierde el acceso estando en otra sección, se vuelve a la información
+  // en lugar de dejar la página en blanco.
+  const seccionActiva: Seccion =
+    !sePuedenVerSecciones || (seccion === "pagos" && !esDueño) ? "info" : seccion;
+  const seccionesSinAcceso: Pestana<Seccion>[] = [{ clave: "info", etiqueta: "Información" }];
+  const seccionesConAcceso: Pestana<Seccion>[] = [
+    { clave: "info", etiqueta: "Información" },
+    { clave: "material", etiqueta: "Material", contador: materiales.length },
+    { clave: "tareas", etiqueta: "Tareas", contador: tareas.length },
+    ...(esDueño
+      ? [{ clave: "pagos" as const, etiqueta: "Pagos", destacado: hayPagosPorRevisar }]
+      : []),
+  ];
   const finalizado = cursoFinalizado({
     activo: curso.activo,
     fechaInicio: curso.fechaInicio,
@@ -315,19 +350,43 @@ export default function CursoDetallePage() {
           </div>
         </div>
 
-        <p className="text-gray-700 whitespace-pre-wrap mt-4">{curso.descripcion}</p>
       </div>
 
-      {/* Pago pendiente: el estudiante ve cómo pagar y envía su comprobante */}
+      {/* El pago pendiente va por delante de las pestañas: es lo que bloquea
+          todo lo demás, así que esconderlo en una sección sería un estorbo. */}
       {!esDueño && esperandoPago && (
         <PanelPago cursoId={curso.id} onPagoEnviado={cargar} />
       )}
 
-      {/* El profesor revisa las inscripciones y confirma los pagos */}
-      {esDueño && <RevisionPagos cursoId={curso.id} />}
+      {/* Cada cosa en su sitio: el estudiante llega a las tareas de un toque,
+          sin recorrer todo el material por el camino. */}
+      <Pestanas
+        pestanas={sePuedenVerSecciones ? seccionesConAcceso : seccionesSinAcceso}
+        activa={seccionActiva}
+        onCambiar={setSeccion}
+        ariaLabel="Secciones del curso"
+      />
+
+      {/* --- Información --- */}
+      {seccionActiva === "info" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
+          <h2 className="font-semibold text-gray-900 mb-3">Sobre este curso</h2>
+          <p className="text-gray-700 whitespace-pre-wrap">{curso.descripcion}</p>
+          {!puedeVerMaterial && (
+            <p className="text-sm text-gray-500 border-t border-gray-100 mt-4 pt-4">
+              {esperandoPago
+                ? "El material y las tareas se abrirán cuando el profesor confirme tu pago."
+                : "Inscríbete en el curso para acceder al material y a las tareas."}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* --- Pagos (solo el profesor) --- */}
+      {seccionActiva === "pagos" && esDueño && <RevisionPagos cursoId={curso.id} />}
 
       {/* Subida de material (solo dueño) */}
-      {esDueño && (
+      {seccionActiva === "material" && esDueño && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
           <h2 className="font-semibold text-gray-900 mb-3">Subir material</h2>
           {data.almacenamientoConfigurado === false && (
@@ -362,6 +421,7 @@ export default function CursoDetallePage() {
       )}
 
       {/* Lista de material */}
+      {seccionActiva === "material" && (
       <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
         <h2 className="font-semibold text-gray-900 mb-3">Material del curso</h2>
         {!puedeVerMaterial ? (
@@ -396,11 +456,12 @@ export default function CursoDetallePage() {
           </ul>
         )}
       </div>
+      )}
 
       {/* Tareas (visible para dueño e inscritos) */}
-      {puedeVerMaterial && (
+      {seccionActiva === "tareas" && puedeVerMaterial && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
             <h2 className="font-semibold text-gray-900">Tareas</h2>
             {esDueño && (
               <Button variante="secondary" tamano="sm" onClick={() => setMostrarFormTarea((v) => !v)}>
