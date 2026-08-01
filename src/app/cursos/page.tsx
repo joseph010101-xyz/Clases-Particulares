@@ -7,6 +7,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import TareasIniciales, {
+  aTareasDeApi,
+  type TareaInicial,
+} from "@/components/cursos/TareasIniciales";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import BadgeVerificado from "@/components/ui/BadgeVerificado";
@@ -45,6 +49,7 @@ export default function CursosPage() {
   const [precio, setPrecio] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
+  const [tareasIniciales, setTareasIniciales] = useState<TareaInicial[]>([]);
   const [creando, setCreando] = useState(false);
   const [errorForm, setErrorForm] = useState("");
   const [puedeCobrar, setPuedeCobrar] = useState(true);
@@ -96,6 +101,8 @@ export default function CursosPage() {
           precio: esDePago ? Number(precio) || 0 : 0,
           fechaInicio: fechaInicio || null,
           fechaFin: fechaFin || null,
+          // Las tareas a medio escribir se descartan en lugar de romper el envío
+          tareas: aTareasDeApi(tareasIniciales),
         }),
       });
       const data = await res.json();
@@ -110,6 +117,7 @@ export default function CursosPage() {
       setPrecio("");
       setFechaInicio("");
       setFechaFin("");
+      setTareasIniciales([]);
       setTab("mios");
       await cargar("mios", usuario);
     } finally {
@@ -294,6 +302,8 @@ export default function CursosPage() {
               Si no indicas fechas, el curso estará disponible de forma permanente.
             </p>
           </div>
+
+          <TareasIniciales tareas={tareasIniciales} onCambiar={setTareasIniciales} />
 
           <div className="flex justify-end gap-2">
             <Button type="button" variante="ghost" onClick={() => setModalAbierto(false)}>Cancelar</Button>

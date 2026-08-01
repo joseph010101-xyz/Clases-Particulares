@@ -129,7 +129,7 @@ export async function PATCH(
       [estudianteId, profesorId].filter(Boolean).map((usuarioId) =>
         notificar({
           usuarioId: usuarioId as string,
-          tipo: "PAGO_RECIBIDO",
+          tipo: "PAGO_ARBITRADO",
           mensaje: aviso,
           enlace: pago.inscripcion ? `/cursos/${pago.inscripcion.curso.id}` : "/estudiantes/dashboard",
         })

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { titulo, descripcion, precio, fechaInicio, fechaFin } = resultado.data;
+    const { titulo, descripcion, precio, fechaInicio, fechaFin, tareas } = resultado.data;
 
     // Un curso de pago exige que el profesor tenga cómo recibir el dinero:
     // de lo contrario el estudiante no sabría a dónde pagar.
@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+    // El curso y su temario nacen juntos: si una tarea falla, no queda un curso
+    // a medio montar que el profesor tenga que descubrir y arreglar a mano.
     const curso = await prisma.curso.create({
       data: {
         titulo,
@@ -114,11 +116,31 @@ export async function POST(request: NextRequest) {
         fechaInicio: fechaInicio ? new Date(fechaInicio) : null,
         fechaFin: fechaFin ? new Date(fechaFin) : null,
         profesorId: payload.userId,
+        ...(tareas && tareas.length > 0
+          ? {
+              tareas: {
+                create: tareas.map((t) => ({
+                  titulo: t.titulo,
+                  descripcion: t.descripcion,
+                  fechaLimite: t.fechaLimite ? new Date(t.fechaLimite) : null,
+                })),
+              },
+            }
+          : {}),
       },
-      select: { id: true, titulo: true },
+      select: { id: true, titulo: true, _count: { select: { tareas: true } } },
     });
 
-    return NextResponse.json({ mensaje: "Curso creado", curso }, { status: 201 });
+    return NextResponse.json(
+      {
+        mensaje:
+          curso._count.tareas > 0
+            ? `Curso creado con ${curso._count.tareas} tarea${curso._count.tareas !== 1 ? "s" : ""}`
+            : "Curso creado",
+        curso,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Error creando curso:", error);
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });

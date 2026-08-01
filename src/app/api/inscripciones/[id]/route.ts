@@ -80,7 +80,7 @@ export async function PATCH(
 
     await notificar({
       usuarioId: inscripcion.estudianteId,
-      tipo: decision === "APROBAR" ? "PAGO_RECIBIDO" : "RESERVA_CANCELADA",
+      tipo: decision === "APROBAR" ? "PAGO_RECIBIDO" : "PAGO_RECHAZADO",
       mensaje:
         decision === "APROBAR"
           ? `Tu pago de "${inscripcion.curso.titulo}" fue confirmado. Ya tienes acceso al curso.`

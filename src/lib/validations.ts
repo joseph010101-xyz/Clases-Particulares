@@ -4,6 +4,7 @@
 // =============================================
 
 import { z } from "zod";
+import { MAX_TAREAS_POR_CURSO } from "@/lib/dominio/cursos";
 
 // ---- AUTH ----
 
@@ -146,6 +147,26 @@ export const categoriaSchema = z.object({
 
 // ---- AULA VIRTUAL ----
 
+// Validación para crear una tarea
+export const tareaSchema = z.object({
+  titulo: z
+    .string()
+    .trim()
+    .min(3, "El título debe tener al menos 3 caracteres")
+    .max(150, "El título no puede exceder 150 caracteres"),
+  descripcion: z
+    .string()
+    .trim()
+    .min(5, "La descripción debe tener al menos 5 caracteres")
+    .max(3000, "La descripción no puede exceder 3000 caracteres"),
+  // Fecha límite opcional en formato ISO o datetime-local
+  fechaLimite: z
+    .string()
+    .optional()
+    .nullable()
+    .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha límite inválida" }),
+});
+
 // Validación para crear/editar un curso
 export const cursoSchema = z
   .object({
@@ -176,6 +197,12 @@ export const cursoSchema = z
       .optional()
       .nullable()
       .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha de fin inválida" }),
+    // El profesor puede dejar el temario planteado de una vez, en lugar de
+    // crear el curso y volver a entrar a añadir las tareas una a una.
+    tareas: z
+      .array(tareaSchema)
+      .max(MAX_TAREAS_POR_CURSO, `No se pueden crear más de ${MAX_TAREAS_POR_CURSO} tareas de una vez`)
+      .optional(),
   })
   .refine(
     (d) => !d.fechaInicio || !d.fechaFin || Date.parse(d.fechaFin) >= Date.parse(d.fechaInicio),
@@ -189,26 +216,6 @@ export const materialSchema = z.object({
     .trim()
     .min(2, "El título debe tener al menos 2 caracteres")
     .max(150, "El título no puede exceder 150 caracteres"),
-});
-
-// Validación para crear una tarea
-export const tareaSchema = z.object({
-  titulo: z
-    .string()
-    .trim()
-    .min(3, "El título debe tener al menos 3 caracteres")
-    .max(150, "El título no puede exceder 150 caracteres"),
-  descripcion: z
-    .string()
-    .trim()
-    .min(5, "La descripción debe tener al menos 5 caracteres")
-    .max(3000, "La descripción no puede exceder 3000 caracteres"),
-  // Fecha límite opcional en formato ISO o datetime-local
-  fechaLimite: z
-    .string()
-    .optional()
-    .nullable()
-    .refine((v) => !v || !isNaN(Date.parse(v)), { message: "Fecha límite inválida" }),
 });
 
 // Validación para calificar una entrega

@@ -8,9 +8,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { obtenerUsuarioActual } from "@/lib/auth";
+import { eliminarArchivo, cloudinaryDisponible, type TipoRecurso } from "@/lib/cloudinary";
 import { rutaDescargaEntrega } from "@/lib/descargas";
 import { puedeVerMaterial } from "@/lib/dominio/cursos";
-import { inscripcionDaAcceso } from "@/lib/dominio";
+import { inscripcionDaAcceso, esEntregaTardia } from "@/lib/dominio";
 
 export async function GET(
   _request: NextRequest,
@@ -67,6 +68,7 @@ export async function GET(
           calificacion: true,
           retroalimentacion: true,
           createdAt: true,
+          updatedAt: true,
           estudiante: { select: { id: true, nombre: true, foto: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -75,9 +77,12 @@ export async function GET(
         tarea,
         esDueño: true,
         // La ruta propia, no la de Cloudinary: una entrega no es pública.
+        // `tardia` se calcula al leer y no se guarda: si el profesor amplía el
+        // plazo, la marca desaparece sola, que es lo que él espera.
         entregas: entregas.map((e) => ({
           ...e,
           url: e.url ? rutaDescargaEntrega(e.id) : null,
+          tardia: esEntregaTardia(tarea.fechaLimite, e.updatedAt),
         })),
       });
     }
@@ -94,13 +99,18 @@ export async function GET(
         calificacion: true,
         retroalimentacion: true,
         createdAt: true,
+        updatedAt: true,
       },
     });
     return NextResponse.json({
       tarea,
       esDueño: false,
       miEntrega: miEntrega
-        ? { ...miEntrega, url: miEntrega.url ? rutaDescargaEntrega(miEntrega.id) : null }
+        ? {
+            ...miEntrega,
+            url: miEntrega.url ? rutaDescargaEntrega(miEntrega.id) : null,
+            tardia: esEntregaTardia(tarea.fechaLimite, miEntrega.updatedAt),
+          }
         : null,
     });
   } catch (error) {
@@ -122,7 +132,13 @@ export async function DELETE(
     const { id } = params;
     const tarea = await prisma.tarea.findUnique({
       where: { id },
-      select: { curso: { select: { profesorId: true } } },
+      select: {
+        curso: { select: { profesorId: true } },
+        // Los archivos de las entregas hay que borrarlos a mano: la cascada de
+        // la base de datos se lleva las filas, pero no lo que hay en el
+        // almacenamiento, que se quedaría ocupando cuota para siempre.
+        entregas: { select: { publicId: true, tipoRecurso: true } },
+      },
     });
     if (!tarea) {
       return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
@@ -132,6 +148,21 @@ export async function DELETE(
     }
 
     await prisma.tarea.delete({ where: { id } });
+
+    // Después de borrar la fila: si el almacenamiento falla, el profesor no se
+    // queda con una tarea que no se puede eliminar.
+    if (cloudinaryDisponible()) {
+      await Promise.all(
+        tarea.entregas
+          .filter((e) => e.publicId)
+          .map((e) =>
+            eliminarArchivo(e.publicId as string, (e.tipoRecurso as TipoRecurso) ?? "raw").catch(
+              (err) => console.error("No se pudo borrar el archivo de una entrega:", err)
+            )
+          )
+      );
+    }
+
     return NextResponse.json({ mensaje: "Tarea eliminada" });
   } catch (error) {
     console.error("Error eliminando tarea:", error);

@@ -23,6 +23,13 @@ export function puedeGestionarCurso(acceso: AccesoCurso): boolean {
 }
 
 /**
+ * Tope de tareas que se pueden plantear de una vez al crear un curso. No es una
+ * regla pedagógica: es un límite para que una petición mal formada no cree
+ * cientos de filas de golpe. Después se pueden seguir añadiendo sin tope.
+ */
+export const MAX_TAREAS_POR_CURSO = 30;
+
+/**
  * ¿La entrega es tardía respecto de la fecha límite? Si no hay fecha límite,
  * nunca es tardía. Se compara el instante de entrega con el límite.
  */

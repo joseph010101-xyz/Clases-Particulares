@@ -4,6 +4,7 @@
 // =============================================
 
 export * from "./horarios";
+export * from "./cursos";
 export * from "./calificaciones";
 export * from "./reservas";
 export * from "./csv";

@@ -5,6 +5,7 @@ import {
   esImagenPermitida,
   formatearTamano,
   MAX_BYTES_ARCHIVO,
+  EXTENSIONES_PERMITIDAS,
 } from "./archivos";
 
 describe("esImagenPermitida", () => {
@@ -82,5 +83,28 @@ describe("formatearTamano", () => {
 describe("MAX_BYTES_ARCHIVO", () => {
   it("son 15 MB", () => {
     expect(MAX_BYTES_ARCHIVO).toBe(15 * 1024 * 1024);
+  });
+});
+
+describe("formatos que el aula admite (comprimidos y texto)", () => {
+  it("acepta los comprimidos que usa la gente para entregar trabajos", () => {
+    expect(esArchivoPermitido("proyecto.zip")).toBe(true);
+    expect(esArchivoPermitido("entrega.rar")).toBe(true);
+    expect(esArchivoPermitido("copia.7z")).toBe(true);
+  });
+
+  it("acepta texto plano", () => {
+    expect(esArchivoPermitido("apuntes.txt")).toBe(true);
+  });
+
+  it("no depende de las mayúsculas de la extensión", () => {
+    expect(esArchivoPermitido("PROYECTO.ZIP")).toBe(true);
+    expect(esArchivoPermitido("Entrega.RaR")).toBe(true);
+  });
+
+  it("los comprimidos están declarados en su propia familia", () => {
+    expect(EXTENSIONES_PERMITIDAS["Comprimidos"]).toEqual(
+      expect.arrayContaining(["zip", "rar", "7z"])
+    );
   });
 });

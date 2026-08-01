@@ -72,6 +72,10 @@ enum TipoNotificacion {
   RESENA_NUEVA
   MENSAJE_NUEVO
   PAGO_RECIBIDO
+  // Un pago rechazado no es una reserva cancelada: sin su propio tipo, el aviso
+  // llega con el icono y el color equivocados.
+  PAGO_RECHAZADO
+  PAGO_ARBITRADO
   PERFIL_VERIFICADO
   ENTREGA_CALIFICADA
 }

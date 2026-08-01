@@ -19,6 +19,8 @@ interface EntregaBase {
   calificacion: number | null;
   retroalimentacion: string | null;
   createdAt: string;
+  /** La calcula la API comparando la entrega con la fecha límite vigente. */
+  tardia?: boolean;
 }
 
 interface EntregaProfesor extends EntregaBase {
@@ -89,7 +91,14 @@ function FilaEntrega({ tareaId, entrega, onCalificado }: { tareaId: string; entr
             </span>
           )}
         </div>
-        <span className="text-xs text-gray-400">{fechaLegible(entrega.createdAt)}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {entrega.tardia && (
+            <span className="text-[11px] font-medium bg-amber-50 text-amber-700 rounded-full px-2 py-0.5">
+              Fuera de plazo
+            </span>
+          )}
+          <span className="text-xs text-gray-400">{fechaLegible(entrega.createdAt)}</span>
+        </div>
       </div>
 
       {entrega.comentario && <p className="text-sm text-gray-600 mt-2 whitespace-pre-wrap">{entrega.comentario}</p>}
@@ -236,6 +245,11 @@ export default function TareaDetallePage() {
             <div className="mb-4 p-3 bg-gray-50 rounded-lg text-sm">
               <p className="text-gray-500">
                 Entregado el {fechaLegible(miEntrega.createdAt)}
+                {miEntrega.tardia && (
+                  <span className="ml-2 text-[11px] font-medium bg-amber-50 text-amber-700 rounded-full px-2 py-0.5">
+                    Fuera de plazo
+                  </span>
+                )}
                 {miEntrega.calificacion != null ? (
                   <span className="ml-2 font-medium text-green-700">Nota: {miEntrega.calificacion}/100</span>
                 ) : (
